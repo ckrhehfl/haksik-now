@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
               for await (const c of req) chunks.push(c)
               const body = JSON.parse(Buffer.concat(chunks).toString() || '{}')
               const { getRecommendation } = await import('./api/_core.js')
-              const text = await getRecommendation(body, env.ANTHROPIC_API_KEY)
+              const text = await getRecommendation(body, env.FACTCHAT_API_KEY)
               send(200, { text })
             } catch (e) {
               send(e.status || 500, { error: e.message || 'AI 추천에 실패했어요.' })

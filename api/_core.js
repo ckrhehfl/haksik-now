@@ -1,13 +1,16 @@
-// AI 학식 추천 로직 (공통) — Vercel 서버리스 함수 + 로컬 dev 서버가 함께 사용.
-// Claude API로 지금 혼잡도·대기·메뉴를 보고 한 곳/메뉴를 추천받습니다.
-import Anthropic from "@anthropic-ai/sdk";
+// AI 학식 추천 로직 (공통) — FactChat 게이트웨이(OpenAI 호환) 사용.
+// Vercel 서버리스 함수 + 로컬 dev 서버가 함께 사용합니다.
+// base URL은 비밀이 아니라 코드에 두고, 키는 환경변수 FACTCHAT_API_KEY 에서만 읽습니다.
+
+const BASE_URL = "https://factchat-cloud.mindlogic.ai/v1/gateway";
+const MODEL = "claude-sonnet-4-6"; // 모델 목록: GET /v1/gateway/models
 
 // restaurants: [{ name, congestion, waitingCount, waitMinutes, menus:[{name, price}] }]
 // preference: 사용자 요청(선택) 예) "매운 거", "저렴한 거"
 export async function getRecommendation({ restaurants = [], preference = "" }, apiKey) {
-  const key = apiKey || process.env.ANTHROPIC_API_KEY;
+  const key = apiKey || process.env.FACTCHAT_API_KEY;
   if (!key) {
-    const e = new Error("서버에 ANTHROPIC_API_KEY가 설정되지 않았어요.");
+    const e = new Error("서버에 FACTCHAT_API_KEY가 설정되지 않았어요.");
     e.status = 500;
     throw e;
   }
@@ -16,8 +19,6 @@ export async function getRecommendation({ restaurants = [], preference = "" }, a
     e.status = 400;
     throw e;
   }
-
-  const client = new Anthropic({ apiKey: key });
 
   const lines = restaurants
     .map(
@@ -39,16 +40,35 @@ export async function getRecommendation({ restaurants = [], preference = "" }, a
     `학생 요청: ${preference || "특별한 요청 없음"}\n\n` +
     "어디서 뭘 먹으면 좋을지 추천해줘.";
 
-  const resp = await client.messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 400,
-    system,
-    messages: [{ role: "user", content: user }],
+  const res = await fetch(`${BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 400,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    }),
   });
 
-  return resp.content
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("")
-    .trim();
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    const e = new Error(`FactChat 오류 (${res.status}) ${detail.slice(0, 200)}`);
+    e.status = res.status === 401 ? 500 : 502;
+    throw e;
+  }
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content?.trim();
+  if (!text) {
+    const e = new Error("추천 응답이 비어 있어요.");
+    e.status = 502;
+    throw e;
+  }
+  return text;
 }
