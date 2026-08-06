@@ -67,7 +67,7 @@ export const restaurants = [
     waitMinutes: 22,
     hourly: [30, 95, 88, 50, 30, 22, 45],
     menus: [
-      { id: "m13", name: "우삼겹 순두부찌개", price: 6500, soldOut: false },
+      { id: "m13", name: "우삼겹 순두부찌개", price: 6900, soldOut: false },
       { id: "m14", name: "우삼겹 된장찌개", price: 6500, soldOut: false },
       { id: "m15", name: "돼지 김치찌개", price: 6500, soldOut: false },
     ],
