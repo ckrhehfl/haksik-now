@@ -2,29 +2,21 @@
 // 시간대 곡선(hourly) 기반 시뮬레이션(liveSim.js)으로 3초마다 값이 자연스럽게 출렁입니다.
 // 모드 전환: "점심 피크 시연" ↔ "실제 시간" (실제 시간 모드는 줄이 1분 단위로 천천히 움직임)
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { congestionLevel } from "../data/mockData";
-import { initialSnapshot, nextTick, countOrders } from "../data/liveSim";
+import { initialSnapshot, nextTick, takeNewOrders } from "../data/liveSim";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState("demo"); // "demo" | "real"
   const [list, setList] = useState(() => initialSnapshot("demo"));
-  const seenOrders = useRef(countOrders()); // 이미 반영한 주문 수 (식당별)
 
   useEffect(() => {
     setList(initialSnapshot(mode));
     const timer = setInterval(() => {
       // 우리 앱에서 새로 들어온 실제 주문 감지 → 해당 식당 줄 +1
-      const now = countOrders();
-      const newOrders = {};
-      for (const id of Object.keys(now)) {
-        const diff = now[id] - (seenOrders.current[id] ?? 0);
-        if (diff > 0) newOrders[id] = diff;
-      }
-      seenOrders.current = now;
-      setList((prev) => nextTick(prev, mode, 3, newOrders));
+      setList((prev) => nextTick(prev, mode, 3, takeNewOrders()));
     }, 3000);
     return () => clearInterval(timer);
   }, [mode]);

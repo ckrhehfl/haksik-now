@@ -91,8 +91,8 @@ export function nextTick(prev, mode, dtSec = 3, newOrders = {}) {
   });
 }
 
-// localStorage "haksik_orders"에서 식당별 주문 개수를 세어줌 (실제 주문 감지용)
-export function countOrders() {
+// localStorage "haksik_orders"에서 식당별 주문 개수를 세어줌
+function countOrders() {
   try {
     const orders = JSON.parse(localStorage.getItem("haksik_orders") ?? "[]");
     const counts = {};
@@ -101,4 +101,20 @@ export function countOrders() {
   } catch {
     return {};
   }
+}
+
+// 마지막 확인 이후 새로 들어온 주문 수를 식당별로 돌려줌.
+// 화면(컴포넌트)이 아니라 모듈에 기준점을 두므로,
+// 주문 화면에 다녀와서 현황판이 다시 열려도 그 사이 주문을 놓치지 않습니다.
+let seenOrderCounts = countOrders(); // 앱 시작 시점의 주문은 이미 반영된 것으로 간주
+
+export function takeNewOrders() {
+  const now = countOrders();
+  const diff = {};
+  for (const id of Object.keys(now)) {
+    const d = now[id] - (seenOrderCounts[id] ?? 0);
+    if (d > 0) diff[id] = d;
+  }
+  seenOrderCounts = now;
+  return diff;
 }
