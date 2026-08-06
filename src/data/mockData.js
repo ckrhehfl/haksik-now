@@ -9,7 +9,7 @@
 export const restaurants = [
   {
     id: "r1",
-    name: "비비든든",
+    name: "바비든든",
     congestion: 85, // 혼잡도 0~100 (클수록 붐빔)
     waitingCount: 30, // 현재 대기 인원(명)
     waitMinutes: 21, // 예상 대기 시간(분)
@@ -41,14 +41,14 @@ export const restaurants = [
     waitMinutes: 22,
     hourly: [22, 85, 72, 38, 25, 20, 40],
     menus: [
-      { id: "m7", name: "등김돈까스(L)", price: 6900, soldOut: false },
+      { id: "m7", name: "등심돈까스(L)", price: 6900, soldOut: false },
       { id: "m8", name: "경성치킨카레라이스", price: 6500, soldOut: false },
       { id: "m9", name: "고구마돈까스", price: 7900, soldOut: false },
     ],
   },
   {
     id: "r4",
-    name: "비비고",
+    name: "비비고고",
     congestion: 35,
     waitingCount: 6,
     waitMinutes: 4,
