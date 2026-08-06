@@ -1,16 +1,19 @@
-// 하단 탭바 (홈 / 주문내역) — 담당: 팀원1
+// 하단 탭바 (홈 / 장바구니 / 주문내역) — 담당: 팀원1
 // 주문하기 버튼이 하단에 고정되는 화면(상세/주문)에서는 겹치므로 쓰지 않습니다.
 
 import { useNavigate, useLocation } from "react-router-dom";
+import { cartItemCount } from "../data/cart";
 
 const TABS = [
   { path: "/", label: "홈", emoji: "🏠" },
+  { path: "/cart", label: "장바구니", emoji: "🛒" },
   { path: "/orders", label: "주문내역", emoji: "🧾" },
 ];
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const cartCount = cartItemCount();
 
   return (
     <nav
@@ -40,10 +43,31 @@ export default function BottomNav() {
               padding: "8px 0 12px",
               fontSize: 12,
               fontWeight: active ? 700 : 500,
+              position: "relative",
             }}
           >
             <div style={{ fontSize: 18 }}>{t.emoji}</div>
             {t.label}
+            {t.path === "/cart" && cartCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  right: "calc(50% - 24px)",
+                  minWidth: 16,
+                  height: 16,
+                  lineHeight: "16px",
+                  borderRadius: 999,
+                  background: "#ef4444",
+                  color: "#fff",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: "0 4px",
+                }}
+              >
+                {cartCount}
+              </span>
+            )}
           </button>
         );
       })}

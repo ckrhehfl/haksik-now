@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { restaurants } from "../data/mockData";
 import { estimateWait } from "../data/liveSim";
+import { addToCart } from "../data/cart";
 
 export default function OrderPage() {
   const { id } = useParams();
@@ -57,6 +58,20 @@ export default function OrderPage() {
     localStorage.setItem("haksik_last_order", orderNo);
 
     navigate("/order-complete");
+  };
+
+  // 장바구니 담기 (팀원1 추가): 다른 식당 것이 담겨 있으면 확인 후 교체
+  const putInCart = () => {
+    if (items.length === 0) return;
+    const ok = addToCart(restaurant, items);
+    if (!ok) {
+      const replace = window.confirm(
+        "장바구니에는 한 식당만 담을 수 있어요.\n기존 장바구니를 비우고 새로 담을까요?"
+      );
+      if (!replace) return;
+      addToCart(restaurant, items, { replace: true });
+    }
+    navigate("/cart");
   };
 
   return (
@@ -174,17 +189,33 @@ export default function OrderPage() {
           <span>합계</span>
           <span>{total.toLocaleString()}원</span>
         </div>
-        <button
-          style={{
-            width: "100%",
-            opacity: items.length === 0 ? 0.5 : 1,
-            cursor: items.length === 0 ? "not-allowed" : "pointer",
-          }}
-          disabled={items.length === 0}
-          onClick={placeOrder}
-        >
-          지금 주문
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            style={{
+              flex: 1,
+              background: "#fff",
+              color: "#2563eb",
+              border: "1px solid #bfdbfe",
+              opacity: items.length === 0 ? 0.5 : 1,
+              cursor: items.length === 0 ? "not-allowed" : "pointer",
+            }}
+            disabled={items.length === 0}
+            onClick={putInCart}
+          >
+            🛒 담기
+          </button>
+          <button
+            style={{
+              flex: 2,
+              opacity: items.length === 0 ? 0.5 : 1,
+              cursor: items.length === 0 ? "not-allowed" : "pointer",
+            }}
+            disabled={items.length === 0}
+            onClick={placeOrder}
+          >
+            지금 주문
+          </button>
+        </div>
       </div>
     </div>
   );

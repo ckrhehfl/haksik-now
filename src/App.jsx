@@ -4,6 +4,7 @@ import RestaurantPage from "./pages/RestaurantPage";
 import OrderPage from "./pages/OrderPage";
 import OrderCompletePage from "./pages/OrderCompletePage";
 import OrdersPage from "./pages/OrdersPage";
+import CartPage from "./pages/CartPage";
 
 // 주소(라우팅)는 00-공용규칙.md 4번 항목 기준. (/orders는 주문내역용으로 추가됨)
 // 화면 내용은 각 pages/ 파일에서 담당 팀원이 채웁니다.
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/order/:id" element={<OrderPage />} />
         <Route path="/order-complete" element={<OrderCompletePage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/cart" element={<CartPage />} />
       </Routes>
     </>
   );
