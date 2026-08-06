@@ -3,6 +3,8 @@ import HomePage from "./pages/HomePage";
 import RestaurantPage from "./pages/RestaurantPage";
 import OrderPage from "./pages/OrderPage";
 import PaymentPage from "./pages/PaymentPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import PaymentFailPage from "./pages/PaymentFailPage";
 import OrderCompletePage from "./pages/OrderCompletePage";
 import OrdersPage from "./pages/OrdersPage";
 import CartPage from "./pages/CartPage";
@@ -44,6 +46,8 @@ export default function App() {
         <Route path="/restaurant/:id" element={<RestaurantPage />} />
         <Route path="/order/:id" element={<OrderPage />} />
         <Route path="/pay" element={<PaymentPage />} />
+        <Route path="/pay/success" element={<PaymentSuccessPage />} />
+        <Route path="/pay/fail" element={<PaymentFailPage />} />
         <Route path="/order-complete" element={<OrderCompletePage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/cart" element={<CartPage />} />

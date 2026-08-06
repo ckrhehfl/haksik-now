@@ -3,6 +3,7 @@
 // 주문은 이전 화면(OrderPage/CartPage)에서 이미 저장됨. 여기선 haksik_last_order 기준으로 표시.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { loadTossPayments } from "@tosspayments/payment-sdk";
 
 const METHODS = [
   { id: "card", label: "신용/체크카드", emoji: "💳" },
@@ -29,10 +30,39 @@ export default function PaymentPage() {
     );
   }
 
-  const pay = () => {
+  const pay = async () => {
     setPaying(true);
-    // 결제하는 척 (데모) — 잠깐 뒤 주문완료로
-    setTimeout(() => navigate("/order-complete"), 1200);
+    const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY;
+
+    // 토스 키가 없으면 목업 동작으로 폴백 (키 없이도 앱은 동작)
+    if (!clientKey) {
+      setTimeout(() => navigate("/order-complete"), 1200);
+      return;
+    }
+
+    try {
+      const toss = await loadTossPayments(clientKey);
+      // 토스 orderId는 6~64자. 우리 주문번호에 타임스탬프를 붙여 만족시킴.
+      const tossOrderId = `haksik_${order.orderNo}_${Date.now().toString().slice(-6)}`;
+      const orderName =
+        order.items.length > 1
+          ? `${order.items[0].name} 외 ${order.items.length - 1}건`
+          : order.items[0].name;
+      await toss.requestPayment("카드", {
+        amount: order.total,
+        orderId: tossOrderId,
+        orderName,
+        customerName: "학식러",
+        successUrl: `${window.location.origin}/pay/success`,
+        failUrl: `${window.location.origin}/pay/fail`,
+      });
+      // 여기 아래는 토스 결제창으로 이동하므로 보통 실행되지 않음
+    } catch (e) {
+      setPaying(false);
+      if (e?.code !== "USER_CANCEL") {
+        alert("결제를 시작하지 못했어요: " + (e?.message || e));
+      }
+    }
   };
 
   return (
@@ -118,7 +148,7 @@ export default function PaymentPage() {
           margin: "4px 16px",
         }}
       >
-        ⚠️ 실제 결제가 아닌 데모 화면이에요 (돈이 빠져나가지 않아요).
+        ⚠️ 테스트 결제예요 — 실제 돈은 빠져나가지 않아요.
       </p>
 
       {/* 결제하기 */}

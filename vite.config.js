@@ -31,6 +31,26 @@ export default defineConfig(({ mode }) => {
               send(e.status || 500, { error: e.message || 'AI 추천에 실패했어요.' })
             }
           })
+
+          // 로컬 개발용: /api/confirm-payment (토스 결제 승인) — Vercel 함수와 동일 로직
+          server.middlewares.use('/api/confirm-payment', async (req, res, next) => {
+            if (req.method !== 'POST') return next()
+            const send = (status, obj) => {
+              res.statusCode = status
+              res.setHeader('content-type', 'application/json')
+              res.end(JSON.stringify(obj))
+            }
+            try {
+              const chunks = []
+              for await (const c of req) chunks.push(c)
+              const body = JSON.parse(Buffer.concat(chunks).toString() || '{}')
+              const { confirmPayment } = await import('./api/_toss.js')
+              const payment = await confirmPayment(body, env.TOSS_SECRET_KEY)
+              send(200, { ok: true, payment })
+            } catch (e) {
+              send(e.status || 500, { error: e.message || '결제 승인 실패', code: e.code })
+            }
+          })
         },
       },
     ],
