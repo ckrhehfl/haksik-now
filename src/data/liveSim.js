@@ -115,6 +115,20 @@ export function estimateWait(restaurantId) {
   };
 }
 
+// 주문 상태 추정: 경과 시간 + 매장 조리 속도(1인분당 분) × 수량
+// 접수(1분 미만) → 조리중 → 픽업 대기
+export function orderStatus(order) {
+  const r = restaurants.find((x) => x.id === order.restaurantId);
+  const p = r ? profileOf(r) : DEFAULT_PROFILE;
+  const qty = order.items?.reduce((s, i) => s + i.qty, 0) ?? 1;
+  const cookMinutes = Math.max(2, qty * p.minutesPerPerson);
+  const elapsedMin = (Date.now() - new Date(order.createdAt).getTime()) / 60000;
+  if (elapsedMin < 1) return { label: "주문 접수", color: "#2563eb", emoji: "🧾" };
+  if (elapsedMin < 1 + cookMinutes)
+    return { label: "조리중", color: "#f59e0b", emoji: "🍳" };
+  return { label: "픽업 대기", color: "#22c55e", emoji: "🔔" };
+}
+
 // localStorage "haksik_orders"에서 식당별 주문 개수를 세어줌
 function countOrders() {
   try {

@@ -1,11 +1,20 @@
 // 주문 내역 — 담당: 팀원1
 // localStorage "haksik_orders"를 읽기만 합니다 (형식은 00-공용규칙.md 3번).
+// 주문 상태(접수→조리중→픽업 대기)는 경과 시간으로 추정하며 15초마다 갱신됩니다.
 
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
+import { orderStatus } from "../data/liveSim";
 
 export default function OrdersPage() {
   const navigate = useNavigate();
+  const [, setTick] = useState(0); // 상태 배지 주기 갱신용
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   let orders = [];
   try {
@@ -30,7 +39,9 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {sorted.map((o) => (
+      {sorted.map((o) => {
+        const status = orderStatus(o);
+        return (
         <div key={o.orderNo + o.createdAt} className="card">
           <div
             style={{
@@ -47,6 +58,23 @@ export default function OrdersPage() {
               })}
             </span>
           </div>
+
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              marginTop: 6,
+              padding: "3px 10px",
+              borderRadius: 999,
+              fontSize: 13,
+              fontWeight: 700,
+              color: status.color,
+              background: `${status.color}1a`,
+            }}
+          >
+            {status.emoji} {status.label}
+          </span>
           <div style={{ color: "#6b7280", fontSize: 14, marginTop: 4 }}>
             {o.restaurantName}
           </div>
@@ -82,7 +110,8 @@ export default function OrdersPage() {
             <span>{o.total.toLocaleString()}원</span>
           </div>
         </div>
-      ))}
+        );
+      })}
 
       <BottomNav />
     </div>
