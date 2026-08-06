@@ -1,16 +1,12 @@
-// 결제 (목업) — 담당: 팀원1
-// ⚠️ 실제 결제/PG 연동 아님. 결제수단 고르고 "결제하는 척"한 뒤 주문완료로 넘어가는 데모 화면.
-// 주문은 이전 화면(OrderPage/CartPage)에서 이미 저장됨. 여기선 haksik_last_order 기준으로 표시.
-import { useState } from "react";
+// 결제 — 담당: 팀원1
+// 토스페이먼츠 "결제위젯"으로 실제 테스트 결제. 위젯이 결제수단 UI를 직접 렌더링함.
+// 키(VITE_TOSS_CLIENT_KEY)가 없으면 목업(바로 주문완료)으로 폴백해 앱은 계속 동작.
+// 주문은 이전 화면에서 이미 저장됨 → haksik_last_order 기준으로 표시/결제.
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loadTossPayments } from "@tosspayments/payment-sdk";
+import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
 
-const METHODS = [
-  { id: "card", label: "신용/체크카드", emoji: "💳" },
-  { id: "kakao", label: "카카오페이", emoji: "🟡" },
-  { id: "toss", label: "토스페이", emoji: "🔵" },
-  { id: "bank", label: "계좌이체", emoji: "🏦" },
-];
+const CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY;
 
 export default function PaymentPage() {
   const navigate = useNavigate();
@@ -18,8 +14,35 @@ export default function PaymentPage() {
   const orders = JSON.parse(localStorage.getItem("haksik_orders") || "[]");
   const order = orders.find((o) => o.orderNo === orderNo);
 
-  const [method, setMethod] = useState("card");
   const [paying, setPaying] = useState(false);
+  const [ready, setReady] = useState(false);
+  const widgetsRef = useRef(null);
+  const inited = useRef(false);
+
+  // 결제위젯 렌더링 (키 있을 때만)
+  useEffect(() => {
+    if (!CLIENT_KEY || !order || inited.current) return;
+    inited.current = true;
+    (async () => {
+      const toss = await loadTossPayments(CLIENT_KEY);
+      const widgets = toss.widgets({ customerKey: ANONYMOUS });
+      await widgets.setAmount({ currency: "KRW", value: order.total });
+      await Promise.all([
+        widgets.renderPaymentMethods({
+          selector: "#toss-payment-methods",
+          variantKey: "DEFAULT",
+        }),
+        widgets.renderAgreement({
+          selector: "#toss-agreement",
+          variantKey: "AGREEMENT",
+        }),
+      ]);
+      widgetsRef.current = widgets;
+      setReady(true);
+    })().catch((e) => {
+      console.error("토스 위젯 로드 실패:", e);
+    });
+  }, [order]);
 
   if (!orderNo || !order) {
     return (
@@ -30,26 +53,17 @@ export default function PaymentPage() {
     );
   }
 
-  const pay = async () => {
+  const orderName =
+    order.items.length > 1
+      ? `${order.items[0].name} 외 ${order.items.length - 1}건`
+      : order.items[0].name;
+
+  // 실제 토스 결제
+  const payToss = async () => {
     setPaying(true);
-    const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY;
-
-    // 토스 키가 없으면 목업 동작으로 폴백 (키 없이도 앱은 동작)
-    if (!clientKey) {
-      setTimeout(() => navigate("/order-complete"), 1200);
-      return;
-    }
-
     try {
-      const toss = await loadTossPayments(clientKey);
-      // 토스 orderId는 6~64자. 우리 주문번호에 타임스탬프를 붙여 만족시킴.
       const tossOrderId = `haksik_${order.orderNo}_${Date.now().toString().slice(-6)}`;
-      const orderName =
-        order.items.length > 1
-          ? `${order.items[0].name} 외 ${order.items.length - 1}건`
-          : order.items[0].name;
-      await toss.requestPayment("카드", {
-        amount: order.total,
+      await widgetsRef.current.requestPayment({
         orderId: tossOrderId,
         orderName,
         customerName: "학식러",
@@ -63,6 +77,12 @@ export default function PaymentPage() {
         alert("결제를 시작하지 못했어요: " + (e?.message || e));
       }
     }
+  };
+
+  // 키 없을 때 목업
+  const payMock = () => {
+    setPaying(true);
+    setTimeout(() => navigate("/order-complete"), 1200);
   };
 
   return (
@@ -103,75 +123,78 @@ export default function PaymentPage() {
         </ul>
       </div>
 
-      {/* 결제 수단 */}
-      <div className="card">
-        <h2 style={{ marginTop: 0, fontSize: 16 }}>결제 수단</h2>
-        <div style={{ display: "grid", gap: 8 }}>
-          {METHODS.map((m) => {
-            const on = method === m.id;
-            return (
-              <button
-                key={m.id}
-                onClick={() => setMethod(m.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  justifyContent: "flex-start",
-                  textAlign: "left",
-                  padding: "12px 14px",
-                  borderRadius: 10,
-                  background: on ? "#eff6ff" : "#fff",
-                  color: "#111827",
-                  border: on ? "2px solid #2563eb" : "1px solid #e5e7eb",
-                  fontWeight: on ? 700 : 500,
-                }}
-              >
-                <span aria-hidden style={{ fontSize: 18 }}>
-                  {m.emoji}
-                </span>
-                <span>{m.label}</span>
-                <span style={{ marginLeft: "auto", color: "#2563eb" }}>
-                  {on ? "●" : ""}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <p
-        style={{
-          textAlign: "center",
-          color: "#9ca3af",
-          fontSize: 12,
-          margin: "4px 16px",
-        }}
-      >
-        ⚠️ 테스트 결제예요 — 실제 돈은 빠져나가지 않아요.
-      </p>
-
-      {/* 결제하기 */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          maxWidth: 480,
-          margin: "0 auto",
-          padding: 16,
-          background: "var(--bg)",
-        }}
-      >
-        <button
-          style={{ width: "100%", opacity: paying ? 0.6 : 1 }}
-          disabled={paying}
-          onClick={pay}
-        >
-          {paying ? "결제 중…" : `${order.total.toLocaleString()}원 결제하기`}
-        </button>
-      </div>
+      {CLIENT_KEY ? (
+        <>
+          {/* 토스 결제위젯이 여기에 결제수단/약관 UI를 렌더링 */}
+          <div className="card">
+            <div id="toss-payment-methods" />
+            <div id="toss-agreement" />
+          </div>
+          <p
+            style={{
+              textAlign: "center",
+              color: "#9ca3af",
+              fontSize: 12,
+              margin: "4px 16px",
+            }}
+          >
+            ⚠️ 토스페이먼츠 테스트 결제예요 — 실제 돈은 빠져나가지 않아요.
+          </p>
+          <div
+            style={{
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              maxWidth: 480,
+              margin: "0 auto",
+              padding: 16,
+              background: "var(--bg)",
+            }}
+          >
+            <button
+              style={{ width: "100%", opacity: !ready || paying ? 0.6 : 1 }}
+              disabled={!ready || paying}
+              onClick={payToss}
+            >
+              {paying ? "결제 중…" : `${order.total.toLocaleString()}원 결제하기`}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p
+            style={{
+              textAlign: "center",
+              color: "#9ca3af",
+              fontSize: 12,
+              margin: "4px 16px",
+            }}
+          >
+            ⚠️ 결제 키 미설정 — 데모 결제로 진행돼요 (실제 돈 안 빠짐).
+          </p>
+          <div
+            style={{
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              maxWidth: 480,
+              margin: "0 auto",
+              padding: 16,
+              background: "var(--bg)",
+            }}
+          >
+            <button
+              style={{ width: "100%", opacity: paying ? 0.6 : 1 }}
+              disabled={paying}
+              onClick={payMock}
+            >
+              {paying ? "결제 중…" : `${order.total.toLocaleString()}원 결제하기 (데모)`}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
