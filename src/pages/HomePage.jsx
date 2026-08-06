@@ -5,12 +5,25 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { congestionLevel } from "../data/mockData";
-import { initialSnapshot, nextTick, takeNewOrders } from "../data/liveSim";
+import {
+  initialSnapshot,
+  nextTick,
+  takeNewOrders,
+  getSavedMode,
+  saveMode,
+} from "../data/liveSim";
+import BottomNav from "../components/BottomNav";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState("demo"); // "demo" | "real"
-  const [list, setList] = useState(() => initialSnapshot("demo"));
+  const [mode, setMode] = useState(getSavedMode); // "demo" | "real" (localStorage에 유지, 기본 real)
+  const [list, setList] = useState(() => initialSnapshot(getSavedMode()));
+
+  const switchMode = () => {
+    const next = mode === "real" ? "demo" : "real";
+    saveMode(next);
+    setMode(next);
+  };
 
   useEffect(() => {
     setList(initialSnapshot(mode));
@@ -28,7 +41,7 @@ export default function HomePage() {
   });
 
   return (
-    <div style={{ padding: "8px 4px 24px" }}>
+    <div style={{ padding: "8px 4px 80px" }}>
       <header style={{ padding: "20px 16px 4px" }}>
         <div
           style={{
@@ -41,7 +54,7 @@ export default function HomePage() {
             학식 나우 <span aria-hidden>🍚</span>
           </h1>
           <button
-            onClick={() => setMode(isReal ? "demo" : "real")}
+            onClick={switchMode}
             style={{
               background: isReal ? "#111827" : "#eff6ff",
               color: isReal ? "#fff" : "#2563eb",
@@ -126,6 +139,8 @@ export default function HomePage() {
           </div>
         );
       })}
+
+      <BottomNav />
     </div>
   );
 }

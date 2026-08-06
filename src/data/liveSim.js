@@ -24,6 +24,16 @@ const profileOf = (r) => PROFILES[r.id] ?? DEFAULT_PROFILE;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 
+// 모드("demo"|"real")를 localStorage에 저장해 새로고침·화면 이동에도 유지.
+// 기본값은 "real"(실제 시간).
+const MODE_KEY = "haksik_mode";
+export function getSavedMode() {
+  return localStorage.getItem(MODE_KEY) === "demo" ? "demo" : "real";
+}
+export function saveMode(mode) {
+  localStorage.setItem(MODE_KEY, mode);
+}
+
 function hourFloatOf(mode) {
   if (mode === "demo") return 12.5; // 점심 피크 고정
   const now = new Date();
@@ -89,6 +99,20 @@ export function nextTick(prev, mode, dtSec = 3, newOrders = {}) {
     }
     return finish(r, c, queueF);
   });
+}
+
+// 특정 식당의 현재 예상 대기 (주문 화면 등에서 표시용)
+// 저장된 모드 기준의 시간대 혼잡도로 계산합니다.
+export function estimateWait(restaurantId) {
+  const r = restaurants.find((x) => x.id === restaurantId);
+  if (!r) return null;
+  const p = profileOf(r);
+  const c = baselineOf(r.hourly, hourFloatOf(getSavedMode()));
+  const queue = (p.maxQueue * c) / 100;
+  return {
+    waitingCount: Math.max(0, Math.round(queue)),
+    waitMinutes: Math.max(0, Math.round(queue * p.minutesPerPerson)),
+  };
 }
 
 // localStorage "haksik_orders"에서 식당별 주문 개수를 세어줌

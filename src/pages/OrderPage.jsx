@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { restaurants } from "../data/mockData";
+import { estimateWait } from "../data/liveSim";
 
 export default function OrderPage() {
   const { id } = useParams();
@@ -144,6 +145,24 @@ export default function OrderPage() {
           background: "var(--bg)",
         }}
       >
+        {(() => {
+          const wait = estimateWait(restaurant.id);
+          return (
+            wait && (
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "#6b7280",
+                  marginBottom: 6,
+                  textAlign: "right",
+                }}
+              >
+                지금 주문하면 예상 대기 약 {wait.waitMinutes}분 (앞에{" "}
+                {wait.waitingCount}명)
+              </div>
+            )
+          );
+        })()}
         <div
           style={{
             display: "flex",

@@ -72,6 +72,7 @@ src/
 | `/restaurant/:id` | RestaurantPage |
 | `/order/:id` | OrderPage |
 | `/order-complete` | OrderCompletePage |
+| `/orders` | OrdersPage (주문 내역, 팀원1 추가) |
 
 화면 이동은 `useNavigate()`로: `navigate("/restaurant/r1")`
 
