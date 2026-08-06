@@ -1,32 +1,17 @@
 // 화면1: 실시간 혼잡도 현황판 — 담당: 팀원1
-// 공용 데이터(mockData.js)를 복사해 들고, 3초마다 혼잡도를 흔들어 실시간 느낌을 냅니다.
+// 시간대 곡선(hourly) 기반 시뮬레이션(liveSim.js)으로 3초마다 값이 자연스럽게 출렁입니다.
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { restaurants, congestionLevel } from "../data/mockData";
-
-// congestion(0~100)에 비례해 대기 인원/시간을 대략적으로 계산
-function deriveWait(congestion) {
-  return {
-    waitingCount: Math.max(0, Math.round(congestion / 3.5)),
-    waitMinutes: Math.max(0, Math.round(congestion / 5)),
-  };
-}
+import { congestionLevel } from "../data/mockData";
+import { initialSnapshot, nextTick } from "../data/liveSim";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [list, setList] = useState(restaurants);
+  const [list, setList] = useState(initialSnapshot);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setList((prev) =>
-        prev.map((r) => {
-          const delta = Math.floor(Math.random() * 17) - 8; // -8 ~ +8
-          const congestion = Math.min(100, Math.max(0, r.congestion + delta));
-          return { ...r, congestion, ...deriveWait(congestion) };
-        })
-      );
-    }, 3000);
+    const timer = setInterval(() => setList(nextTick), 3000);
     return () => clearInterval(timer);
   }, []);
 
