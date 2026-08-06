@@ -5,6 +5,16 @@
 const BASE_URL = "https://factchat-cloud.mindlogic.ai/v1/gateway";
 const MODEL = "claude-sonnet-4-6"; // 모델 목록: GET /v1/gateway/models
 
+// 이 엔드포인트는 배포되면 누구나 호출할 수 있으므로 입력 크기를 제한합니다.
+// (제한이 없으면 남이 우리 API 키로 긴 요청을 마음껏 보낼 수 있습니다)
+const MAX_RESTAURANTS = 10;
+const MAX_MENUS = 10;
+const MAX_NAME = 40;
+const MAX_PREFERENCE = 100;
+
+const str = (v, max) => String(v ?? "").slice(0, max);
+const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
 // restaurants: [{ name, congestion, waitingCount, waitMinutes, menus:[{name, price}] }]
 // preference: 사용자 요청(선택) 예) "매운 거", "저렴한 거"
 export async function getRecommendation({ restaurants = [], preference = "" }, apiKey) {
@@ -21,10 +31,14 @@ export async function getRecommendation({ restaurants = [], preference = "" }, a
   }
 
   const lines = restaurants
+    .slice(0, MAX_RESTAURANTS)
     .map(
       (r) =>
-        `- ${r.name}: 혼잡도 ${r.congestion}/100, 대기 ${r.waitingCount}명·약 ${r.waitMinutes}분, 메뉴: ${(r.menus || [])
-          .map((m) => `${m.name}(${m.price.toLocaleString()}원)`)
+        `- ${str(r.name, MAX_NAME)}: 혼잡도 ${num(r.congestion)}/100, 대기 ${num(
+          r.waitingCount
+        )}명·약 ${num(r.waitMinutes)}분, 메뉴: ${(Array.isArray(r.menus) ? r.menus : [])
+          .slice(0, MAX_MENUS)
+          .map((m) => `${str(m.name, MAX_NAME)}(${num(m.price).toLocaleString()}원)`)
           .join(", ")}`
     )
     .join("\n");
@@ -37,7 +51,7 @@ export async function getRecommendation({ restaurants = [], preference = "" }, a
 
   const user =
     `지금 식당 현황:\n${lines}\n\n` +
-    `학생 요청: ${preference || "특별한 요청 없음"}\n\n` +
+    `학생 요청: ${str(preference, MAX_PREFERENCE) || "특별한 요청 없음"}\n\n` +
     "어디서 뭘 먹으면 좋을지 추천해줘.";
 
   const res = await fetch(`${BASE_URL}/chat/completions`, {

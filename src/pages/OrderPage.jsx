@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { restaurants } from "../data/mockData";
 import { estimateWait } from "../data/liveSim";
 import { addToCart } from "../data/cart";
+import { makeOrder, setPendingOrder } from "../data/orders";
 
 export default function OrderPage() {
   const { id } = useParams();
@@ -42,20 +43,15 @@ export default function OrderPage() {
   const placeOrder = () => {
     if (items.length === 0) return;
 
-    const orderNo = "A" + Date.now().toString().slice(-4);
-    const order = {
-      orderNo,
-      restaurantId: restaurant.id,
-      restaurantName: restaurant.name,
-      items,
-      total,
-      createdAt: new Date().toISOString(),
-    };
-
-    const orders = JSON.parse(localStorage.getItem("haksik_orders") || "[]");
-    orders.push(order);
-    localStorage.setItem("haksik_orders", JSON.stringify(orders));
-    localStorage.setItem("haksik_last_order", orderNo);
+    // 결제 전이므로 아직 확정하지 않고 대기 주문으로만 둡니다.
+    setPendingOrder(
+      makeOrder({
+        restaurantId: restaurant.id,
+        restaurantName: restaurant.name,
+        items,
+        total,
+      })
+    );
 
     navigate("/pay");
   };

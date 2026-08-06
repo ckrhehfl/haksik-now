@@ -22,10 +22,17 @@ const profileOf = (r) => PROFILES[r.id] ?? DEFAULT_PROFILE;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 
+// 운영시간(11~17시) 밖에서는 점심 피크 시각으로 간주합니다.
+// 그러지 않으면 저녁·새벽 시연 때 모든 식당이 '여유'로만 보여 혼잡 화면을 못 보여줍니다.
+const OPEN_HOUR = 11;
+const CLOSE_HOUR = 17;
+const DEMO_HOUR = 12.5; // 12:30 점심 피크
+
 // 현재 시각을 소수 시(예: 12.5 = 12:30)로 반환
 function hourFloat() {
   const now = new Date();
-  return now.getHours() + now.getMinutes() / 60;
+  const h = now.getHours() + now.getMinutes() / 60;
+  return h >= OPEN_HOUR && h <= CLOSE_HOUR ? h : DEMO_HOUR;
 }
 
 // hourly 배열(인덱스 0=11시 … 6=17시)을 현재 시각으로 선형 보간한 기준 혼잡도
@@ -48,20 +55,31 @@ function finish(r, congestion, queueF) {
   };
 }
 
+// 최신 스냅샷을 모듈에 보관 — 현황판과 상세 화면이 같은 값을 보도록 하기 위함.
+// (화면마다 따로 계산하면 같은 식당이 한쪽은 '여유', 한쪽은 '혼잡'으로 갈립니다)
+let liveList = null;
+
 // 첫 렌더용 스냅샷: 현재 시각 기준값 ± 6, 줄은 혼잡도에 맞는 길이로 시작
 export function initialSnapshot() {
   const h = hourFloat();
-  return restaurants.map((r) => {
+  liveList = restaurants.map((r) => {
     const c = clamp(baselineOf(r.hourly, h) + rand(-6, 6), 0, 100);
     const queueF = (profileOf(r).maxQueue * c) / 100;
     return finish(r, c, queueF);
   });
+  return liveList;
+}
+
+// 특정 식당의 현재 실시간 값. 현황판을 거치지 않고 URL로 바로 들어와도 동작합니다.
+export function liveRestaurant(id) {
+  if (!liveList) initialSnapshot();
+  return liveList.find((r) => r.id === id) ?? null;
 }
 
 // 틱(dtSec초)마다 호출. newOrders: { 식당id: 이번에 들어온 실제 주문 수 }
 export function nextTick(prev, dtSec = 3, newOrders = {}) {
   const h = hourFloat();
-  return prev.map((r) => {
+  liveList = prev.map((r) => {
     const p = profileOf(r);
     const base = baselineOf(r.hourly, h);
     // 혼잡도: 기준값 쪽으로 30% 끌려가며 ±4 노이즈 (평균 회귀)
@@ -82,11 +100,17 @@ export function nextTick(prev, dtSec = 3, newOrders = {}) {
 
     return finish(r, c, queueF);
   });
+  return liveList;
 }
 
 // 특정 식당의 현재 예상 대기 (주문 화면 등에서 표시용)
 // 현재 시각의 시간대 혼잡도로 계산합니다.
 export function estimateWait(restaurantId) {
+  // 현황판이 보여주는 값과 어긋나지 않도록 실시간 스냅샷을 우선 사용합니다.
+  const live = liveList?.find((x) => x.id === restaurantId);
+  if (live) {
+    return { waitingCount: live.waitingCount, waitMinutes: live.waitMinutes };
+  }
   const r = restaurants.find((x) => x.id === restaurantId);
   if (!r) return null;
   const p = profileOf(r);

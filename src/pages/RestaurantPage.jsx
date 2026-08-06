@@ -2,7 +2,7 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { restaurants, congestionLevel } from "../data/mockData";
-import { hourlyLoad } from "../data/liveSim";
+import { hourlyLoad, liveRestaurant } from "../data/liveSim";
 
 // 시간대별 대기 현황 꺾은선 그래프 (SVG) — 캐치테이블 스타일
 // - 파란 선 + 아래 영역 그라데이션(위쪽 연한 파랑 → 아래 투명)
@@ -151,7 +151,10 @@ export default function RestaurantPage() {
     );
   }
 
-  const level = congestionLevel(restaurant.congestion);
+  // 현황판이 보여주는 실시간 값을 그대로 사용합니다.
+  // (mockData의 고정 초기값을 쓰면 현황판은 '여유'인데 여기선 '혼잡'으로 갈립니다)
+  const live = liveRestaurant(restaurant.id) ?? restaurant;
+  const level = congestionLevel(live.congestion);
   const load = hourlyLoad(restaurant.id);
 
   return (
@@ -173,6 +176,9 @@ export default function RestaurantPage() {
         >
           <span>{level.emoji}</span>
           <span>{level.label}</span>
+        </div>
+        <div style={{ marginTop: 8, color: "#6b7280", fontSize: 14 }}>
+          대기 {live.waitingCount}명 · 약 {live.waitMinutes}분
         </div>
       </div>
 
