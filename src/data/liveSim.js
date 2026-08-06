@@ -1,7 +1,11 @@
 // 실시간 혼잡도 시뮬레이션 — 담당: 팀원1
-// mockData의 hourly(11~17시 기준 혼잡도 곡선)를 축으로,
-// 현재 시각의 기준값 주변에서 자연스럽게 출렁이는 값을 만듭니다.
-// (순수 랜덤이 아니라 "기준값으로 끌려가는 평균 회귀 + 소량의 노이즈")
+// mockData의 hourly(11~17시 기준 혼잡도 곡선)를 축으로 값을 움직입니다.
+//
+// 두 가지 모드:
+//  - "demo": 점심 피크(12:30) 고정. 시연용으로 값이 활발히 출렁임.
+//  - "real": 실제 시각 기준. 대기 줄이 "상태"로 남아서
+//            1분마다 조리 속도만큼 빠져나가고, 가끔 새 주문이 들어와 늘어남.
+//            우리 앱에서 실제 주문(localStorage "haksik_orders")이 생기면 그 식당 줄 +1.
 
 import { restaurants } from "./mockData";
 
@@ -15,18 +19,16 @@ const PROFILES = {
   r5: { maxQueue: 26, minutesPerPerson: 0.9 }, // 값찌개: 찌개 국물류
 };
 const DEFAULT_PROFILE = { maxQueue: 25, minutesPerPerson: 1.0 };
+const profileOf = (r) => PROFILES[r.id] ?? DEFAULT_PROFILE;
 
-// 점심시간이 아니어도 시연 화면이 살아있어 보이도록 12:30 기준으로 고정.
-// 실제 시각을 따라가게 하려면 false로 바꾸세요. (오후 4시엔 대부분 '여유'가 정상)
-export const FORCE_LUNCH_DEMO = true;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 
-function currentHourFloat() {
-  if (FORCE_LUNCH_DEMO) return 12.5;
+function hourFloatOf(mode) {
+  if (mode === "demo") return 12.5; // 점심 피크 고정
   const now = new Date();
   return now.getHours() + now.getMinutes() / 60;
 }
-
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 // hourly 배열(인덱스 0=11시 … 6=17시)을 현재 시각으로 선형 보간한 기준 혼잡도
 function baselineOf(hourly, hourFloat) {
@@ -36,35 +38,67 @@ function baselineOf(hourly, hourFloat) {
   return hourly[i] * (1 - frac) + hourly[i + 1] * frac;
 }
 
-// 혼잡도 → 대기 인원/시간 (매장 특성 반영, 인원은 ±1명 잔떨림)
-function derive(r, congestion) {
-  const p = PROFILES[r.id] ?? DEFAULT_PROFILE;
-  const jitter = Math.floor(Math.random() * 3) - 1;
-  const waitingCount = clamp(
-    Math.round((p.maxQueue * congestion) / 100) + jitter,
-    0,
-    p.maxQueue + 5
-  );
-  const waitMinutes = Math.round(waitingCount * p.minutesPerPerson);
-  return { ...r, congestion: Math.round(congestion), waitingCount, waitMinutes };
+// 내부 상태(_queueF: 소수점 대기 인원)를 표시용 필드로 마무리
+function finish(r, congestion, queueF) {
+  const p = profileOf(r);
+  return {
+    ...r,
+    congestion: Math.round(congestion),
+    _queueF: queueF,
+    waitingCount: Math.max(0, Math.round(queueF)),
+    waitMinutes: Math.max(0, Math.round(queueF * p.minutesPerPerson)),
+  };
 }
 
-// 첫 렌더용 스냅샷: 현재 시각 기준값 ± 6
-export function initialSnapshot() {
-  const h = currentHourFloat();
+// 첫 렌더용 스냅샷: 현재 시각 기준값 ± 6, 줄은 혼잡도에 맞는 길이로 시작
+export function initialSnapshot(mode) {
+  const h = hourFloatOf(mode);
   return restaurants.map((r) => {
-    const c = clamp(baselineOf(r.hourly, h) + (Math.random() * 12 - 6), 0, 100);
-    return derive(r, c);
+    const c = clamp(baselineOf(r.hourly, h) + rand(-6, 6), 0, 100);
+    const queueF = (profileOf(r).maxQueue * c) / 100;
+    return finish(r, c, queueF);
   });
 }
 
-// 틱(3초)마다: 기준값 쪽으로 30% 끌려가면서 ±4 노이즈
-export function nextTick(prev) {
-  const h = currentHourFloat();
+// 틱(dtSec초)마다 호출. newOrders: { 식당id: 이번에 들어온 실제 주문 수 }
+export function nextTick(prev, mode, dtSec = 3, newOrders = {}) {
+  const h = hourFloatOf(mode);
   return prev.map((r) => {
+    const p = profileOf(r);
     const base = baselineOf(r.hourly, h);
-    const pulled = r.congestion + (base - r.congestion) * 0.3;
-    const c = clamp(pulled + (Math.random() * 8 - 4), 0, 100);
-    return derive(r, c);
+    // 혼잡도: 기준값 쪽으로 30% 끌려가며 ±4 노이즈 (평균 회귀)
+    const c = clamp(r.congestion + (base - r.congestion) * 0.3 + rand(-4, 4), 0, 100);
+
+    let queueF;
+    if (mode === "demo") {
+      // 시연용: 혼잡도에서 곧바로 계산 + ±1명 잔떨림
+      queueF = (p.maxQueue * c) / 100 + rand(-1, 1);
+    } else {
+      // 실제 시간: 줄이 상태로 유지됨
+      queueF = r._queueF ?? r.waitingCount;
+      // ① 조리 속도만큼 빠져나감 (예: 1인당 1분이면 1분에 1명)
+      const served = dtSec / 60 / p.minutesPerPerson;
+      queueF = Math.max(0, queueF - served);
+      // ② 가끔 새 손님 도착 — 혼잡도 대비 줄이 짧으면 도착 확률↑ (균형 유지)
+      const target = (p.maxQueue * c) / 100;
+      const arriveChance = served * clamp((2 * target - queueF) / Math.max(target, 1), 0.2, 2);
+      if (Math.random() < arriveChance) queueF += Math.random() < 0.25 ? 2 : 1;
+      // ③ 우리 앱에서 실제 주문이 발생하면 그만큼 줄 +
+      queueF += newOrders[r.id] ?? 0;
+      queueF = Math.min(queueF, p.maxQueue + 8);
+    }
+    return finish(r, c, queueF);
   });
+}
+
+// localStorage "haksik_orders"에서 식당별 주문 개수를 세어줌 (실제 주문 감지용)
+export function countOrders() {
+  try {
+    const orders = JSON.parse(localStorage.getItem("haksik_orders") ?? "[]");
+    const counts = {};
+    for (const o of orders) counts[o.restaurantId] = (counts[o.restaurantId] ?? 0) + 1;
+    return counts;
+  } catch {
+    return {};
+  }
 }
