@@ -2,6 +2,7 @@ import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import RestaurantPage from "./pages/RestaurantPage";
 import OrderPage from "./pages/OrderPage";
+import PaymentPage from "./pages/PaymentPage";
 import OrderCompletePage from "./pages/OrderCompletePage";
 import OrdersPage from "./pages/OrdersPage";
 import CartPage from "./pages/CartPage";
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/restaurant/:id" element={<RestaurantPage />} />
         <Route path="/order/:id" element={<OrderPage />} />
+        <Route path="/pay" element={<PaymentPage />} />
         <Route path="/order-complete" element={<OrderCompletePage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/cart" element={<CartPage />} />

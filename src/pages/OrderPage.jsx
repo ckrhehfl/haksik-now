@@ -57,7 +57,7 @@ export default function OrderPage() {
     localStorage.setItem("haksik_orders", JSON.stringify(orders));
     localStorage.setItem("haksik_last_order", orderNo);
 
-    navigate("/order-complete");
+    navigate("/pay");
   };
 
   // 장바구니 담기 (팀원1 추가): 다른 식당 것이 담겨 있으면 확인 후 교체

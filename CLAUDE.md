@@ -8,7 +8,7 @@
 실시간 학식 혼잡도 현황판 + '지금 주문' + **AI 추천** 기능을 갖춘 **모바일 웹**.
 교내 해커톤(12시간, 비전공자 3인) 프로젝트. 화면 데이터는 전부 **가짜(목업)**, AI 추천만 실제 호출.
 
-화면 흐름: `/` 현황판 → `/restaurant/:id` 식당 상세 → `/order/:id` 지금 주문 → `/order-complete` 주문완료
+화면 흐름: `/` 현황판 → `/restaurant/:id` 식당 상세 → `/order/:id` 지금 주문 → `/pay` 결제(목업) → `/order-complete` 주문완료
 
 ## 기술 스택
 
@@ -33,7 +33,8 @@ npm run build    # 프로덕션 빌드
 2. **화면에 쓰는 데이터는 목업(가짜).** 새 데이터가 필요하면 `src/data/mockData.js`에 상수로 추가합니다.
 3. **`src/data/mockData.js`의 필드 이름을 바꾸지 마세요.** (`congestion`, `waitingCount`, `waitMinutes`, `hourly`, `menus`, `price`, `soldOut` 등) 여러 팀원이 이 형식에 의존합니다. 식당·메뉴 **추가**는 형식만 지키면 OK.
 4. **모바일 우선.** 콘텐츠 최대 폭 480px, 가운데 정렬. 아이폰 폭(약 390px)에서 안 깨지게.
-5. **라우팅 주소를 바꾸지 마세요.** 아래 6개로 고정.
+5. **라우팅 주소를 바꾸지 마세요.** 아래 7개로 고정.
+   - 결제(`/pay`)도 **목업 화면**입니다. 결제수단 고르고 "결제하는 척"만 하고, 실제 돈·카드번호·PG 연동은 없습니다.
 6. 새 라이브러리 설치는 꼭 필요할 때만. 기본은 React + react-router-dom로 해결.
 
 ## 폴더 구조 & 담당
@@ -56,6 +57,7 @@ src/
 │  ├─ HomePage.jsx          # 화면1: 혼잡도 현황판 + AI 추천 (팀원1)
 │  ├─ RestaurantPage.jsx    # 화면2: 식당 상세/메뉴/꺾은선 차트 (팀원2)
 │  ├─ OrderPage.jsx         # 화면3: 메뉴 담기 + 지금 주문 (팀원2)
+│  ├─ PaymentPage.jsx       # 결제 (목업) — 팀원1
 │  ├─ OrderCompletePage.jsx # 주문 완료: 주문번호/QR (팀원2)
 │  ├─ OrdersPage.jsx        # 주문 내역 (팀원1)
 │  └─ CartPage.jsx          # 장바구니 (팀원1)
@@ -83,6 +85,7 @@ src/
 | `/` | HomePage |
 | `/restaurant/:id` | RestaurantPage |
 | `/order/:id` | OrderPage |
+| `/pay` | PaymentPage (결제 · 목업) |
 | `/order-complete` | OrderCompletePage |
 | `/orders` | OrdersPage (주문 내역, 팀원1 추가) |
 | `/cart` | CartPage (장바구니, 팀원1 추가) |

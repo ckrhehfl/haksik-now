@@ -58,7 +58,7 @@ export default function CartPage() {
     localStorage.setItem("haksik_orders", JSON.stringify(orders));
     localStorage.setItem("haksik_last_order", orderNo);
     clearCart();
-    navigate("/order-complete");
+    navigate("/pay");
   };
 
   return (
