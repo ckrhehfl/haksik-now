@@ -5,14 +5,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
+import { getPendingOrder, commitPendingOrder } from "../data/orders";
+import { clearCart } from "../data/cart";
 
 const CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY;
 
 export default function PaymentPage() {
   const navigate = useNavigate();
-  const orderNo = localStorage.getItem("haksik_last_order");
-  const orders = JSON.parse(localStorage.getItem("haksik_orders") || "[]");
-  const order = orders.find((o) => o.orderNo === orderNo);
+  // 아직 확정되지 않은 '결제 대기' 주문을 결제합니다.
+  const order = getPendingOrder();
 
   const [paying, setPaying] = useState(false);
   const [ready, setReady] = useState(false);
@@ -44,7 +45,7 @@ export default function PaymentPage() {
     });
   }, [order]);
 
-  if (!orderNo || !order) {
+  if (!order) {
     return (
       <div className="card">
         <p>결제할 주문을 찾을 수 없어요.</p>
@@ -79,10 +80,14 @@ export default function PaymentPage() {
     }
   };
 
-  // 키 없을 때 목업
+  // 키 없을 때 목업 — 결제 성공으로 보고 주문을 확정합니다.
   const payMock = () => {
     setPaying(true);
-    setTimeout(() => navigate("/order-complete"), 1200);
+    setTimeout(() => {
+      commitPendingOrder();
+      clearCart();
+      navigate("/order-complete", { replace: true });
+    }, 1200);
   };
 
   return (

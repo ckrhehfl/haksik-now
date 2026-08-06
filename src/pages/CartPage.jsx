@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import { getCart, setCart, clearCart } from "../data/cart";
 import { estimateWait } from "../data/liveSim";
+import { makeOrder, setPendingOrder } from "../data/orders";
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -44,20 +45,16 @@ export default function CartPage() {
   const wait = estimateWait(cart.restaurantId);
 
   const placeOrder = () => {
-    const orderNo = "A" + Date.now().toString().slice(-4);
-    const order = {
-      orderNo,
-      restaurantId: cart.restaurantId,
-      restaurantName: cart.restaurantName,
-      items: cart.items,
-      total,
-      createdAt: new Date().toISOString(),
-    };
-    const orders = JSON.parse(localStorage.getItem("haksik_orders") || "[]");
-    orders.push(order);
-    localStorage.setItem("haksik_orders", JSON.stringify(orders));
-    localStorage.setItem("haksik_last_order", orderNo);
-    clearCart();
+    // 결제 전이므로 주문 확정도, 장바구니 비우기도 하지 않습니다.
+    // 둘 다 결제 성공 시점에 처리합니다.
+    setPendingOrder(
+      makeOrder({
+        restaurantId: cart.restaurantId,
+        restaurantName: cart.restaurantName,
+        items: cart.items,
+        total,
+      })
+    );
     navigate("/pay");
   };
 
