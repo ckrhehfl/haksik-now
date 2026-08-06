@@ -1,0 +1,50 @@
+/* 공용 기본 스타일 (뼈대) — 담당 팀원3이 팀원3-디자인발표.md 프롬프트 ①로 확장합니다.
+   00-공용규칙.md 5번(색·디자인 톤)을 따릅니다. */
+
+:root {
+  --primary: #2563eb; /* 주 색상(파랑) */
+  --green: #22c55e; /* 여유 */
+  --orange: #f59e0b; /* 보통 */
+  --red: #ef4444; /* 혼잡 */
+  --bg: #f9fafb;
+  --card: #ffffff;
+  --text: #111827;
+
+  font-family: system-ui, "Segoe UI", Roboto, "Apple SD Gothic Neo", sans-serif;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+/* 콘텐츠는 모바일 폭 기준으로 가운데 정렬 */
+#root {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100svh;
+  background: var(--bg);
+}
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  margin: 12px;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  padding: 12px 16px;
+  font-size: 16px;
+}
