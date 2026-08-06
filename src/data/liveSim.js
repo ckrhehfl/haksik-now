@@ -1,11 +1,9 @@
 // 실시간 혼잡도 시뮬레이션 — 담당: 팀원1
 // mockData의 hourly(11~17시 기준 혼잡도 곡선)를 축으로 값을 움직입니다.
 //
-// 두 가지 모드:
-//  - "demo": 점심 피크(12:30) 고정. 시연용으로 값이 활발히 출렁임.
-//  - "real": 실제 시각 기준. 대기 줄이 "상태"로 남아서
-//            1분마다 조리 속도만큼 빠져나가고, 가끔 새 주문이 들어와 늘어남.
-//            우리 앱에서 실제 주문(localStorage "haksik_orders")이 생기면 그 식당 줄 +1.
+// 실제 시각 기준으로 동작: 대기 줄이 "상태"로 남아서
+// 1분마다 조리 속도만큼 빠져나가고, 가끔 새 주문이 들어와 늘어남.
+// 우리 앱에서 실제 주문(localStorage "haksik_orders")이 생기면 그 식당 줄 +1.
 
 import { restaurants } from "./mockData";
 
@@ -24,18 +22,8 @@ const profileOf = (r) => PROFILES[r.id] ?? DEFAULT_PROFILE;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 
-// 모드("demo"|"real")를 localStorage에 저장해 새로고침·화면 이동에도 유지.
-// 기본값은 "real"(실제 시간).
-const MODE_KEY = "haksik_mode";
-export function getSavedMode() {
-  return localStorage.getItem(MODE_KEY) === "demo" ? "demo" : "real";
-}
-export function saveMode(mode) {
-  localStorage.setItem(MODE_KEY, mode);
-}
-
-function hourFloatOf(mode) {
-  if (mode === "demo") return 12.5; // 점심 피크 고정
+// 현재 시각을 소수 시(예: 12.5 = 12:30)로 반환
+function hourFloat() {
   const now = new Date();
   return now.getHours() + now.getMinutes() / 60;
 }
@@ -61,8 +49,8 @@ function finish(r, congestion, queueF) {
 }
 
 // 첫 렌더용 스냅샷: 현재 시각 기준값 ± 6, 줄은 혼잡도에 맞는 길이로 시작
-export function initialSnapshot(mode) {
-  const h = hourFloatOf(mode);
+export function initialSnapshot() {
+  const h = hourFloat();
   return restaurants.map((r) => {
     const c = clamp(baselineOf(r.hourly, h) + rand(-6, 6), 0, 100);
     const queueF = (profileOf(r).maxQueue * c) / 100;
@@ -71,48 +59,73 @@ export function initialSnapshot(mode) {
 }
 
 // 틱(dtSec초)마다 호출. newOrders: { 식당id: 이번에 들어온 실제 주문 수 }
-export function nextTick(prev, mode, dtSec = 3, newOrders = {}) {
-  const h = hourFloatOf(mode);
+export function nextTick(prev, dtSec = 3, newOrders = {}) {
+  const h = hourFloat();
   return prev.map((r) => {
     const p = profileOf(r);
     const base = baselineOf(r.hourly, h);
     // 혼잡도: 기준값 쪽으로 30% 끌려가며 ±4 노이즈 (평균 회귀)
     const c = clamp(r.congestion + (base - r.congestion) * 0.3 + rand(-4, 4), 0, 100);
 
-    let queueF;
-    if (mode === "demo") {
-      // 시연용: 혼잡도에서 곧바로 계산 + ±1명 잔떨림
-      queueF = (p.maxQueue * c) / 100 + rand(-1, 1);
-    } else {
-      // 실제 시간: 줄이 상태로 유지됨
-      queueF = r._queueF ?? r.waitingCount;
-      // ① 조리 속도만큼 빠져나감 (예: 1인당 1분이면 1분에 1명)
-      const served = dtSec / 60 / p.minutesPerPerson;
-      queueF = Math.max(0, queueF - served);
-      // ② 가끔 새 손님 도착 — 혼잡도 대비 줄이 짧으면 도착 확률↑ (균형 유지)
-      const target = (p.maxQueue * c) / 100;
-      const arriveChance = served * clamp((2 * target - queueF) / Math.max(target, 1), 0.2, 2);
-      if (Math.random() < arriveChance) queueF += Math.random() < 0.25 ? 2 : 1;
-      // ③ 우리 앱에서 실제 주문이 발생하면 그만큼 줄 +
-      queueF += newOrders[r.id] ?? 0;
-      queueF = Math.min(queueF, p.maxQueue + 8);
-    }
+    // 대기 줄은 상태로 유지됨
+    let queueF = r._queueF ?? r.waitingCount;
+    // ① 조리 속도만큼 빠져나감 (예: 1인당 1분이면 1분에 1명)
+    const served = dtSec / 60 / p.minutesPerPerson;
+    queueF = Math.max(0, queueF - served);
+    // ② 가끔 새 손님 도착 — 혼잡도 대비 줄이 짧으면 도착 확률↑ (균형 유지)
+    const target = (p.maxQueue * c) / 100;
+    const arriveChance = served * clamp((2 * target - queueF) / Math.max(target, 1), 0.2, 2);
+    if (Math.random() < arriveChance) queueF += Math.random() < 0.25 ? 2 : 1;
+    // ③ 우리 앱에서 실제 주문이 발생하면 그만큼 줄 +
+    queueF += newOrders[r.id] ?? 0;
+    queueF = Math.min(queueF, p.maxQueue + 8);
+
     return finish(r, c, queueF);
   });
 }
 
 // 특정 식당의 현재 예상 대기 (주문 화면 등에서 표시용)
-// 저장된 모드 기준의 시간대 혼잡도로 계산합니다.
+// 현재 시각의 시간대 혼잡도로 계산합니다.
 export function estimateWait(restaurantId) {
   const r = restaurants.find((x) => x.id === restaurantId);
   if (!r) return null;
   const p = profileOf(r);
-  const c = baselineOf(r.hourly, hourFloatOf(getSavedMode()));
+  const c = baselineOf(r.hourly, hourFloat());
   const queue = (p.maxQueue * c) / 100;
   return {
     waitingCount: Math.max(0, Math.round(queue)),
     waitMinutes: Math.max(0, Math.round(queue * p.minutesPerPerson)),
   };
+}
+
+// 시간대별(11~17시) 대기 인원·예상 대기시간 — 상세 화면 그래프용.
+// hourly(혼잡도 0~100)를 매장 프로필(maxQueue, minutesPerPerson)로 인원/분으로 환산.
+const HOURS = ["11시", "12시", "13시", "14시", "15시", "16시", "17시"];
+// 점심 피크(12시·13시 = hourly 인덱스 1·2)는 항상 '혼잡'(🔴)으로 표시.
+// congestionLevel 기준 '혼잡'은 혼잡도 ≥ 70 이므로 그 이상으로 끌어올림.
+const LUNCH_HOURS = [1, 2];
+const LUNCH_MIN_CONGESTION = 75;
+export function hourlyLoad(restaurantId) {
+  const r = restaurants.find((x) => x.id === restaurantId);
+  if (!r) return null;
+  const p = profileOf(r);
+  const points = r.hourly.map((raw, i) => {
+    // 점심시간엔 혼잡도 하한을 적용해 항상 붐비게(🔴) 보이도록 함
+    const c = LUNCH_HOURS.includes(i) ? Math.max(raw, LUNCH_MIN_CONGESTION) : raw;
+    const people = Math.round((p.maxQueue * c) / 100);
+    return {
+      hour: HOURS[i],
+      congestion: c,
+      people,
+      minutes: Math.round(people * p.minutesPerPerson),
+    };
+  });
+  // 대기 인원이 가장 많은 시간대(피크)
+  let peakIndex = 0;
+  points.forEach((pt, i) => {
+    if (pt.people > points[peakIndex].people) peakIndex = i;
+  });
+  return { points, peakIndex };
 }
 
 // 주문 상태 추정 (시연용 타임라인, 경과 시간 기준)

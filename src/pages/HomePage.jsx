@@ -1,79 +1,38 @@
 // 화면1: 실시간 혼잡도 현황판 — 담당: 팀원1
 // 시간대 곡선(hourly) 기반 시뮬레이션(liveSim.js)으로 3초마다 값이 자연스럽게 출렁입니다.
-// 모드 전환: "점심 피크 시연" ↔ "실제 시간" (실제 시간 모드는 줄이 1분 단위로 천천히 움직임)
+// 현재 시각 기준으로 대기 줄이 1분 단위로 천천히 움직입니다.
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { congestionLevel } from "../data/mockData";
-import {
-  initialSnapshot,
-  nextTick,
-  takeNewOrders,
-  getSavedMode,
-  saveMode,
-} from "../data/liveSim";
+import { initialSnapshot, nextTick, takeNewOrders } from "../data/liveSim";
 import BottomNav from "../components/BottomNav";
+import AiRecommend from "../components/AiRecommend";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState(getSavedMode); // "demo" | "real" (localStorage에 유지, 기본 real)
-  const [list, setList] = useState(() => initialSnapshot(getSavedMode()));
-
-  const switchMode = () => {
-    const next = mode === "real" ? "demo" : "real";
-    saveMode(next);
-    setMode(next);
-  };
+  const [list, setList] = useState(initialSnapshot);
 
   useEffect(() => {
-    setList(initialSnapshot(mode));
     const timer = setInterval(() => {
       // 우리 앱에서 새로 들어온 실제 주문 감지 → 해당 식당 줄 +1
-      setList((prev) => nextTick(prev, mode, 3, takeNewOrders()));
+      setList((prev) => nextTick(prev, 3, takeNewOrders()));
     }, 3000);
     return () => clearInterval(timer);
-  }, [mode]);
-
-  const isReal = mode === "real";
-  const clock = new Date().toLocaleTimeString("ko-KR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  }, []);
 
   return (
     <div style={{ padding: "8px 4px 80px" }}>
       <header style={{ padding: "20px 16px 4px" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: 24 }}>
-            학식 나우 <span aria-hidden>🍚</span>
-          </h1>
-          <button
-            onClick={switchMode}
-            style={{
-              background: isReal ? "#111827" : "#eff6ff",
-              color: isReal ? "#fff" : "#2563eb",
-              border: isReal ? "none" : "1px solid #bfdbfe",
-              borderRadius: 999,
-              padding: "6px 12px",
-              fontSize: 12,
-              fontWeight: 700,
-            }}
-          >
-            {isReal ? `🕐 실제 시간 ${clock}` : "🍜 점심 피크 시연"}
-          </button>
-        </div>
+        <h1 style={{ margin: 0, fontSize: 24 }}>
+          학식 나우 <span aria-hidden>🍚</span>
+        </h1>
         <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 14 }}>
-          {isReal
-            ? "실제 시각 기준이에요. 줄이 1분 단위로 천천히 움직입니다."
-            : "지금 어느 식당이 한가할까요? 실시간 혼잡도를 확인하세요."}
+          지금 어느 식당이 한가할까요? 실시간 혼잡도를 확인하세요.
         </p>
       </header>
+
+      <AiRecommend list={list} />
 
       {list.map((r) => {
         const level = congestionLevel(r.congestion);
