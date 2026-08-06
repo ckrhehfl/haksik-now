@@ -59,7 +59,7 @@ haksik-now/
 
 ## Task 0: 스캐폴드 + GitHub 저장소 (리더 또는 팀원1)
 
-**목표:** 빈 React 프로젝트를 만들고 GitHub public 저장소에 올려 팀원을 초대한다.
+**목표:** 빈 React 프로젝트를 만들고 GitHub public 저장소에 올린다.
 
 - [ ] **Step 1: Vite React 프로젝트 생성**
 
@@ -86,25 +86,17 @@ git commit -m "chore: vite react 스캐폴드"
 gh repo create haksik-now --public --source=. --remote=origin --push
 ```
 
-- [ ] **Step 4: 팀원 2명 협업자 초대**
-
-```bash
-gh repo edit --add-collaborator <팀원1_깃허브아이디>
-gh repo edit --add-collaborator <팀원2_깃허브아이디>
-```
-> 또는 GitHub 웹에서 Settings → Collaborators → Add people.
-
-- [ ] **Step 5: 팀원에게 클론 안내**
+- [ ] **Step 4: 팀원에게 클론 안내**
 
 각 팀원은 아래로 내려받아 시작:
 ```bash
-git clone https://github.com/<본인또는리더아이디>/haksik-now.git
+git clone https://github.com/ckrhehfl/haksik-now.git
 cd haksik-now
 npm install
 npm run dev
 ```
 
-- [ ] **Step 6: 팀원별 작업 카드 전달**
+- [ ] **Step 5: 팀원별 작업 카드 전달**
   - 팀원1 → `docs/superpowers/plans/team/팀원1-현황판.md`
   - 팀원2 → `docs/superpowers/plans/team/팀원2-메뉴주문.md`
   - 팀원3 → `docs/superpowers/plans/team/팀원3-디자인.md`
