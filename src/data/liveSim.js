@@ -115,18 +115,14 @@ export function estimateWait(restaurantId) {
   };
 }
 
-// 주문 상태 추정: 경과 시간 + 매장 조리 속도(1인분당 분) × 수량
-// 접수(1분 미만) → 조리중 → 픽업 대기
+// 주문 상태 추정 (시연용 타임라인, 경과 시간 기준)
+// 접수(~30초) → 조리중(1분) → 조리완료(30초) → 완료된 주문
 export function orderStatus(order) {
-  const r = restaurants.find((x) => x.id === order.restaurantId);
-  const p = r ? profileOf(r) : DEFAULT_PROFILE;
-  const qty = order.items?.reduce((s, i) => s + i.qty, 0) ?? 1;
-  const cookMinutes = Math.max(2, qty * p.minutesPerPerson);
-  const elapsedMin = (Date.now() - new Date(order.createdAt).getTime()) / 60000;
-  if (elapsedMin < 1) return { label: "주문 접수", color: "#2563eb", emoji: "🧾" };
-  if (elapsedMin < 1 + cookMinutes)
-    return { label: "조리중", color: "#f59e0b", emoji: "🍳" };
-  return { label: "픽업 대기", color: "#22c55e", emoji: "🔔" };
+  const elapsedSec = (Date.now() - new Date(order.createdAt).getTime()) / 1000;
+  if (elapsedSec < 30) return { label: "주문 접수", color: "#2563eb", emoji: "🧾" };
+  if (elapsedSec < 90) return { label: "조리중", color: "#f59e0b", emoji: "🍳" };
+  if (elapsedSec < 120) return { label: "조리완료", color: "#22c55e", emoji: "🔔" };
+  return { label: "완료된 주문", color: "#6b7280", emoji: "✅" };
 }
 
 // localStorage "haksik_orders"에서 식당별 주문 개수를 세어줌

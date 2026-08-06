@@ -1,6 +1,6 @@
 // 주문 내역 — 담당: 팀원1
 // localStorage "haksik_orders"를 읽기만 합니다 (형식은 00-공용규칙.md 3번).
-// 주문 상태(접수→조리중→픽업 대기)는 경과 시간으로 추정하며 15초마다 갱신됩니다.
+// 주문 상태(접수→조리중→조리완료→완료된 주문)는 경과 시간으로 추정하며 5초마다 갱신됩니다.
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ export default function OrdersPage() {
   const [, setTick] = useState(0); // 상태 배지 주기 갱신용
 
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 15000);
+    const timer = setInterval(() => setTick((t) => t + 1), 5000);
     return () => clearInterval(timer);
   }, []);
 
