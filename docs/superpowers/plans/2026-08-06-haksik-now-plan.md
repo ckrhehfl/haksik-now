@@ -49,7 +49,7 @@ haksik-now/
 2. 이후 병렬:
    - **팀원1**: `mockData.js` 확정 → `App.jsx` 라우팅 → `HomePage.jsx`(현황판+실시간)
    - **팀원2**: `RestaurantPage.jsx` → `OrderPage.jsx` → `OrderCompletePage.jsx`(localStorage)
-   - **팀원3**: `index.css`(공용 스타일) → `Header.jsx` → `CongestionBadge.jsx` → 반응형 + 발표자료
+   - **팀원3**: `index.css`(공용 스타일) → `Header.jsx` → `CongestionBadge.jsx` → 반응형 마무리 → (먼저 끝나면) 통합 지원
 3. **통합 (6~9h)**: 화면 연결 확인, 데이터 흐름 점검
 4. **마무리 (9~12h)**: 배포(Vercel), 버그 수정, 시연 리허설
 
@@ -107,7 +107,7 @@ npm run dev
 - [ ] **Step 6: 팀원별 작업 카드 전달**
   - 팀원1 → `docs/superpowers/plans/team/팀원1-현황판.md`
   - 팀원2 → `docs/superpowers/plans/team/팀원2-메뉴주문.md`
-  - 팀원3 → `docs/superpowers/plans/team/팀원3-디자인발표.md`
+  - 팀원3 → `docs/superpowers/plans/team/팀원3-디자인.md`
   - 전원 → `docs/superpowers/plans/team/00-공용규칙.md` 먼저 읽기
 
 ---
@@ -118,7 +118,7 @@ npm run dev
 
 - **팀원1 (현황판+실시간+공용데이터)** → `team/팀원1-현황판.md`
 - **팀원2 (메뉴+지금주문+localStorage)** → `team/팀원2-메뉴주문.md`
-- **팀원3 (디자인+공용컴포넌트+발표)** → `team/팀원3-디자인발표.md`
+- **팀원3 (디자인+공용컴포넌트)** → `team/팀원3-디자인.md`
 - **공용 규칙(데이터 형식·커밋법)** → `team/00-공용규칙.md`
 
 ---
@@ -136,7 +136,7 @@ vercel
 ```
 > 또는 vercel.com에서 GitHub 저장소를 import (더 쉬움, 로그인 후 클릭 몇 번).
 
-- [ ] **Step 5: 배포 URL로 3분 시연 리허설** — 발표 시나리오대로 실제 클릭.
+- [ ] **Step 5: 배포 URL로 3분 시연 리허설** — 전체 흐름(메인 → 상세 → 주문 → 완료)을 실제로 클릭해 확인.
 
 ---
 

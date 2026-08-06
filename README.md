@@ -30,7 +30,7 @@ npm run dev
 | 전원(먼저) | `docs/.../team/00-공용규칙.md` | (읽기) |
 | 팀원1 | `팀원1-현황판.md` | `src/pages/HomePage.jsx` |
 | 팀원2 | `팀원2-메뉴주문.md` | `src/pages/RestaurantPage.jsx`, `OrderPage.jsx`, `OrderCompletePage.jsx` |
-| 팀원3 | `팀원3-디자인발표.md` | `src/index.css`, `src/components/Header.jsx`, `CongestionBadge.jsx` |
+| 팀원3 | `팀원3-디자인.md` | `src/index.css`, `src/components/Header.jsx`, `CongestionBadge.jsx` |
 
 > 뼈대에서 `mockData.js`와 라우팅을 이미 만들어 두었으니, 팀원1은 프롬프트 ①②를 건너뛰고 **프롬프트 ③(HomePage)**부터 시작하면 됩니다.
 
