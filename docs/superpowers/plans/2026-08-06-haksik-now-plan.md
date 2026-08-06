@@ -7,7 +7,7 @@
 
 **아키텍처:** React(Vite) 단일 페이지 앱. 백엔드·DB·로그인 없음. 모든 데이터는 프론트엔드의 목업 파일(`src/data/mockData.js`)에 두고, 실시간 느낌은 `setInterval`로 혼잡도 값을 흔들어 구현. 주문 내역은 `localStorage`에 저장.
 
-**기술 스택:** React 18 + Vite, react-router-dom, 순수 CSS, Vercel 배포. 개발은 AI 코딩 도구(Claude Code) + Gemini 채팅 활용.
+**기술 스택:** React 18 + Vite, react-router-dom, 순수 CSS, Vercel 배포. 개발은 전부 **Claude Code(터미널 CLI)**로 진행.
 
 ## 전역 제약 (Global Constraints)
 
