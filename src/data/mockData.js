@@ -43,7 +43,7 @@ export const restaurants = [
     menus: [
       { id: "m7", name: "등심돈까스(L)", price: 6900, soldOut: false, emoji: "🍱" },
       { id: "m8", name: "경성치킨카레라이스", price: 6500, soldOut: false, emoji: "🍛" },
-      { id: "m9", name: "고구마돈까스", price: 7900, soldOut: false, emoji: "🍠" },
+      { id: "m9", name: "고구마돈까스", price: 7900, soldOut: true, emoji: "🍠" }, // 품절 UI 시연용
     ],
   },
   {

@@ -2,6 +2,19 @@
 // 서버(/api/recommend)가 실제 AI 호출을 하고, 여기선 결과만 보여줍니다.
 import { useState } from "react";
 
+// AI 호출이 실패했을 때 쓰는 규칙 기반 추천: 제일 한가한 곳 + 첫 판매중 메뉴
+function ruleBasedPick(list) {
+  if (!Array.isArray(list) || list.length === 0) return null;
+  const best = [...list].sort((a, b) => a.congestion - b.congestion)[0];
+  const menu = best.menus.find((m) => !m.soldOut) ?? best.menus[0];
+  if (!menu) return null;
+  return (
+    `지금 제일 한가한 ${best.name} 어때? 대기 ${best.waitingCount}명, ` +
+    `약 ${best.waitMinutes}분이면 먹을 수 있어. ${menu.name}(${menu.price.toLocaleString()}원) 추천! 🍽️\n` +
+    `(AI 연결이 잠시 불안정해서 혼잡도 기준으로 골랐어요)`
+  );
+}
+
 export default function AiRecommend({ list }) {
   const [preference, setPreference] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,7 +42,10 @@ export default function AiRecommend({ list }) {
       if (!res.ok) throw new Error(data.error || "추천을 받지 못했어요.");
       setText(data.text);
     } catch (e) {
-      setError(e.message);
+      // AI 서버가 안 될 때도 화면이 죽지 않게 규칙 기반으로 대신 골라줍니다.
+      const fallback = ruleBasedPick(list);
+      if (fallback) setText(fallback);
+      else setError(e.message);
     } finally {
       setLoading(false);
     }
