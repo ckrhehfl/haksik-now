@@ -8,6 +8,7 @@ import PaymentFailPage from "./pages/PaymentFailPage";
 import OrderCompletePage from "./pages/OrderCompletePage";
 import OrdersPage from "./pages/OrdersPage";
 import CartPage from "./pages/CartPage";
+import PickupAlert from "./components/PickupAlert";
 
 // 주소(라우팅)는 00-공용규칙.md 4번 항목 기준. (/orders는 주문내역용으로 추가됨)
 // 화면 내용은 각 pages/ 파일에서 담당 팀원이 채웁니다.
@@ -44,6 +45,7 @@ export default function App() {
   return (
     <>
       <TopBar />
+      <PickupAlert />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/restaurant/:id" element={<RestaurantPage />} />

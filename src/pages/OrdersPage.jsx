@@ -2,10 +2,12 @@
 // localStorage "haksik_orders"를 읽고, 사용자가 직접 주문을 취소할 수 있습니다.
 // 주문 상태(접수→조리중→조리완료→완료된 주문)는 경과 시간으로 추정하며 5초마다 갱신됩니다.
 // 취소는 "주문 접수" 단계에서만 가능(조리 시작되면 취소 불가). 확인은 앱 자체 모달(학식나우).
+// 주문 카드를 탭하면 상세(픽업 QR + 거래명세서) 모달이 열립니다.
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
+import PickupQR from "../components/PickupQR";
 import { orderStatus, estimateWait } from "../data/liveSim";
 import { menuEmoji } from "../data/mockData";
 
@@ -21,6 +23,7 @@ export default function OrdersPage() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState(readOrders);
   const [confirmOrder, setConfirmOrder] = useState(null); // 취소 확인 모달 대상
+  const [detailOrder, setDetailOrder] = useState(null); // 상세(QR·명세서) 모달 대상
   const [, setTick] = useState(0); // 상태 배지 주기 갱신용
 
   useEffect(() => {
@@ -71,7 +74,11 @@ export default function OrdersPage() {
           <div
             key={o.orderNo + o.createdAt}
             className="card"
-            style={{ opacity: canceled ? 0.6 : 1 }}
+            role="button"
+            tabIndex={0}
+            onClick={() => setDetailOrder(o)}
+            onKeyDown={(e) => e.key === "Enter" && setDetailOrder(o)}
+            style={{ opacity: canceled ? 0.6 : 1, cursor: "pointer" }}
           >
             <div
               style={{
@@ -151,7 +158,10 @@ export default function OrdersPage() {
 
             {cancelable && (
               <button
-                onClick={() => setConfirmOrder(o)}
+                onClick={(e) => {
+                  e.stopPropagation(); // 카드 클릭(상세 열기)과 분리
+                  setConfirmOrder(o);
+                }}
                 style={{
                   marginTop: 12,
                   width: "100%",
@@ -216,6 +226,124 @@ export default function OrdersPage() {
                 주문 취소
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 주문 상세 모달: 픽업 QR + 거래명세서 */}
+      {detailOrder && (
+        <div
+          onClick={() => setDetailOrder(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            zIndex: 100,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              padding: 20,
+              width: "100%",
+              maxWidth: 340,
+              maxHeight: "85vh",
+              overflowY: "auto",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontWeight: 800, color: "#2563eb", marginBottom: 6 }}>
+              학식나우 <span aria-hidden>🍚</span>
+            </div>
+            <h2 style={{ margin: "0 0 10px", fontSize: 22 }}>
+              주문번호 {detailOrder.orderNo}
+            </h2>
+
+            {!detailOrder.canceled && <PickupQR order={detailOrder} />}
+
+            {/* 거래명세서 */}
+            <div
+              style={{
+                marginTop: 14,
+                padding: "12px 14px",
+                background: "#f9fafb",
+                borderRadius: 12,
+                textAlign: "left",
+                fontSize: 14,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontWeight: 700,
+                  marginBottom: 6,
+                }}
+              >
+                <span>{detailOrder.restaurantName}</span>
+                <span style={{ color: "#6b7280", fontWeight: 400 }}>
+                  거래명세서
+                </span>
+              </div>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                {detailOrder.items.map((it) => (
+                  <li
+                    key={it.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "3px 0",
+                      color: "#374151",
+                    }}
+                  >
+                    <span>
+                      {menuEmoji(it.id)} {it.name} x {it.qty}
+                    </span>
+                    <span>{(it.price * it.qty).toLocaleString()}원</span>
+                  </li>
+                ))}
+              </ul>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: 8,
+                  paddingTop: 8,
+                  borderTop: "1px dashed #d1d5db",
+                  fontWeight: 700,
+                }}
+              >
+                <span>합계</span>
+                <span>{detailOrder.total.toLocaleString()}원</span>
+              </div>
+              <div style={{ marginTop: 6, color: "#6b7280", fontSize: 13 }}>
+                결제시간{" "}
+                {new Date(detailOrder.createdAt).toLocaleString("ko-KR", {
+                  month: "long",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+              {detailOrder.canceled && (
+                <div style={{ marginTop: 4, color: "#ef4444", fontSize: 13 }}>
+                  ❌ 취소된 주문입니다
+                </div>
+              )}
+            </div>
+
+            <button
+              style={{ width: "100%", marginTop: 14 }}
+              onClick={() => setDetailOrder(null)}
+            >
+              닫기
+            </button>
           </div>
         </div>
       )}

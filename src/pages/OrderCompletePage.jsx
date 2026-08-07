@@ -1,29 +1,9 @@
 // 주문 완료: 주문번호 + 픽업용 QR — 담당: 팀원2
-// QR에는 실제 주문 정보가 인코딩됩니다 (폰으로 스캔하면 주문번호가 보여요).
-// 실서비스에서는 식당 태블릿이 이 QR을 스캔해 픽업을 확인하는 구조.
+// QR은 공용 컴포넌트(components/PickupQR.jsx)를 사용합니다.
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
-
-function PickupQR({ order }) {
-  const payload = `학식나우 주문 ${order.orderNo} · ${order.restaurantName} · ${order.total.toLocaleString()}원`;
-  return (
-    <div
-      style={{
-        width: 140,
-        height: 140,
-        padding: 10,
-        background: "#fff",
-        border: "1px solid #e5e7eb",
-        borderRadius: 12,
-        margin: "0 auto",
-      }}
-    >
-      <QRCodeSVG value={payload} size={118} level="M" />
-    </div>
-  );
-}
+import PickupQR from "../components/PickupQR";
 
 export default function OrderCompletePage() {
   const navigate = useNavigate();
@@ -77,6 +57,12 @@ export default function OrderCompletePage() {
             </p>
             <p style={{ margin: "0 0 18px", color: "#6b7280", fontSize: 14 }}>
               주문번호 <strong style={{ color: "#2563eb" }}>{order.orderNo}</strong>
+              <br />
+              결제시간{" "}
+              {new Date(order.createdAt).toLocaleTimeString("ko-KR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
               <br />
               픽업할 때 아래 QR을 보여주세요.
             </p>

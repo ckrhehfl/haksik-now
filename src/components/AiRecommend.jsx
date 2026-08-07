@@ -33,10 +33,24 @@ export default function AiRecommend({ list }) {
         waitMinutes: r.waitMinutes,
         menus: r.menus.map((m) => ({ name: m.name, price: m.price })),
       }));
+      // 이 기기의 과거 주문 메뉴(최근 5종)를 함께 보내 취향을 반영
+      let pastMenus = [];
+      try {
+        const orders = JSON.parse(localStorage.getItem("haksik_orders") ?? "[]");
+        pastMenus = [
+          ...new Set(
+            orders
+              .filter((o) => !o.canceled)
+              .flatMap((o) => o.items.map((i) => i.name))
+          ),
+        ].slice(-5);
+      } catch {
+        pastMenus = [];
+      }
       const res = await fetch("/api/recommend", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ restaurants, preference }),
+        body: JSON.stringify({ restaurants, preference, pastMenus }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "추천을 받지 못했어요.");

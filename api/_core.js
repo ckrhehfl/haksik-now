@@ -11,13 +11,15 @@ const MAX_RESTAURANTS = 10;
 const MAX_MENUS = 10;
 const MAX_NAME = 40;
 const MAX_PREFERENCE = 100;
+const MAX_PAST_MENUS = 5;
 
 const str = (v, max) => String(v ?? "").slice(0, max);
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
 // restaurants: [{ name, congestion, waitingCount, waitMinutes, menus:[{name, price}] }]
 // preference: 사용자 요청(선택) 예) "매운 거", "저렴한 거"
-export async function getRecommendation({ restaurants = [], preference = "" }, apiKey) {
+// pastMenus: 이 기기에서 과거 주문한 메뉴 이름들(선택) — 취향 반영용
+export async function getRecommendation({ restaurants = [], preference = "", pastMenus = [] }, apiKey) {
   const key = apiKey || process.env.FACTCHAT_API_KEY;
   if (!key) {
     const e = new Error("서버에 FACTCHAT_API_KEY가 설정되지 않았어요.");
@@ -46,11 +48,20 @@ export async function getRecommendation({ restaurants = [], preference = "" }, a
   const system =
     "너는 대학교 학생식당 추천 도우미야. 지금 각 식당의 실시간 혼잡도·대기시간·메뉴를 보고, " +
     "학생에게 딱 한 곳과 메뉴 하나를 추천해줘. 규칙: 한국어 2~3문장, 친근한 반말, " +
-    "붐비는 곳은 피하고 한가한 곳을 우선하되 학생 요청도 반영. 이모지는 한두 개까지. " +
+    "붐비는 곳은 피하고 한가한 곳을 우선하되 학생 요청과 과거 주문 취향도 반영. " +
+    "모든 곳이 붐비면 덜 붐비는 대안 시간대를 짧게 제안. 이모지는 한두 개까지. " +
     "마크다운·목록 없이 자연스러운 문장으로.";
 
+  // 서버(Vercel)는 UTC라서 한국 시간으로 보정
+  const kstHour = (new Date().getUTCHours() + 9) % 24;
+  const past = (Array.isArray(pastMenus) ? pastMenus : [])
+    .slice(0, MAX_PAST_MENUS)
+    .map((m) => str(m, MAX_NAME))
+    .filter(Boolean);
+
   const user =
-    `지금 식당 현황:\n${lines}\n\n` +
+    `현재 시각: ${kstHour}시\n지금 식당 현황:\n${lines}\n\n` +
+    `이 학생이 과거에 주문한 메뉴: ${past.length ? past.join(", ") : "기록 없음"}\n` +
     `학생 요청: ${str(preference, MAX_PREFERENCE) || "특별한 요청 없음"}\n\n` +
     "어디서 뭘 먹으면 좋을지 추천해줘.";
 
