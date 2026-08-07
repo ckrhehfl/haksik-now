@@ -3,6 +3,8 @@
 실시간 학식 혼잡도 현황판 + '지금 주문' + **AI 추천** 모바일 웹 — 교내 해커톤(12시간, 비전공자 3인) 프로젝트. 전부 목업(가짜) 데이터로 동작합니다.
 
 **🔗 배포(공개): https://haksik-now.vercel.app** ← 폰에서 바로 열림
+<img width="428" height="418" alt="image" src="https://github.com/user-attachments/assets/87f6d283-50af-490a-9e2b-0a319b2826a9" />
+
 
 > 자세한 진행 상황은 [`진행상황.md`](./진행상황.md) 참고.
 
