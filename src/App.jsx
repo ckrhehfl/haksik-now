@@ -17,7 +17,10 @@ import CartPage from "./pages/CartPage";
 function TopBar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  if (pathname === "/") return null;
+  // 메인은 뒤로 갈 곳이 없고, 주문완료/결제승인 화면은 이전(결제) 화면으로
+  // 되돌아가면 흐름이 꼬이므로 뒤로가기를 숨깁니다.
+  if (pathname === "/" || pathname === "/order-complete" || pathname === "/pay/success")
+    return null;
   return (
     <div style={{ padding: "12px 12px 0" }}>
       <button

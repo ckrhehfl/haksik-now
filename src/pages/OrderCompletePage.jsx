@@ -1,36 +1,26 @@
-// 주문 완료: 주문번호 + 가짜 QR — 담당: 팀원2
+// 주문 완료: 주문번호 + 픽업용 QR — 담당: 팀원2
+// QR에는 실제 주문 정보가 인코딩됩니다 (폰으로 스캔하면 주문번호가 보여요).
+// 실서비스에서는 식당 태블릿이 이 QR을 스캔해 픽업을 확인하는 구조.
 
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 
-function FakeQR() {
-  const cells = Array.from({ length: 49 }, (_, i) => {
-    // 항상 같은 패턴이 나오도록 인덱스 기반 가짜 규칙 사용
-    const on = (i * 7 + Math.floor(i / 7) * 3) % 5 < 2;
-    return on;
-  });
-
+function PickupQR({ order }) {
+  const payload = `학식나우 주문 ${order.orderNo} · ${order.restaurantName} · ${order.total.toLocaleString()}원`;
   return (
     <div
       style={{
         width: 140,
         height: 140,
-        display: "grid",
-        gridTemplateColumns: "repeat(7, 1fr)",
-        gridTemplateRows: "repeat(7, 1fr)",
-        gap: 2,
-        padding: 12,
+        padding: 10,
         background: "#fff",
         border: "1px solid #e5e7eb",
         borderRadius: 12,
         margin: "0 auto",
       }}
     >
-      {cells.map((on, i) => (
-        <div
-          key={i}
-          style={{ background: on ? "#111827" : "transparent" }}
-        />
-      ))}
+      <QRCodeSVG value={payload} size={118} level="M" />
     </div>
   );
 }
@@ -40,6 +30,7 @@ export default function OrderCompletePage() {
   const orderNo = localStorage.getItem("haksik_last_order");
   const orders = JSON.parse(localStorage.getItem("haksik_orders") || "[]");
   const order = orders.find((o) => o.orderNo === orderNo);
+  const [showPopup, setShowPopup] = useState(true); // 도착 시 완료 팝업
 
   if (!orderNo || !order) {
     return (
@@ -52,10 +43,54 @@ export default function OrderCompletePage() {
 
   return (
     <div style={{ padding: "16px 0", textAlign: "center" }}>
+      {/* 주문 완료 팝업 (도착 시 1회 표시) */}
+      {showPopup && (
+        <div
+          onClick={() => setShowPopup(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            zIndex: 100,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              padding: 24,
+              width: "100%",
+              maxWidth: 320,
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 44 }} aria-hidden>
+              🎉
+            </div>
+            <p style={{ margin: "10px 0 4px", fontSize: 18, fontWeight: 700 }}>
+              주문이 완료됐어요!
+            </p>
+            <p style={{ margin: "0 0 18px", color: "#6b7280", fontSize: 14 }}>
+              주문번호 <strong style={{ color: "#2563eb" }}>{order.orderNo}</strong>
+              <br />
+              픽업할 때 아래 QR을 보여주세요.
+            </p>
+            <button style={{ width: "100%" }} onClick={() => setShowPopup(false)}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="card">
         <p style={{ margin: 0, color: "#6b7280" }}>주문이 완료됐어요</p>
         <h1 style={{ margin: "8px 0", fontSize: 28 }}>주문번호 {order.orderNo}</h1>
-        <FakeQR />
+        <PickupQR order={order} />
       </div>
 
       <div className="card" style={{ textAlign: "left" }}>
