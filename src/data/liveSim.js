@@ -54,14 +54,67 @@ function finish(r, congestion, queueF) {
 // (화면마다 따로 계산하면 같은 식당이 한쪽은 '여유', 한쪽은 '혼잡'으로 갈립니다)
 let liveList = null;
 
-// 첫 렌더용 스냅샷: 현재 시각 기준값 ± 6, 줄은 혼잡도에 맞는 길이로 시작
+// 새로고침(F5)해도 값이 튀지 않도록 스냅샷을 localStorage에 보관합니다.
+// 복원할 때는 동적 값(혼잡도·대기)만 가져오고, 이름·메뉴는 항상 최신 mockData를 씁니다.
+const LIVE_KEY = "haksik_live";
+const LIVE_TTL_MS = 10 * 60 * 1000; // 10분 지난 스냅샷은 버리고 새로 시작
+
+function saveLive() {
+  try {
+    localStorage.setItem(
+      LIVE_KEY,
+      JSON.stringify({
+        at: Date.now(),
+        list: liveList.map((r) => ({
+          id: r.id,
+          congestion: r.congestion,
+          _queueF: r._queueF,
+        })),
+      })
+    );
+  } catch {
+    /* 저장 실패해도 앱 동작에는 지장 없음 */
+  }
+}
+
+function loadLive() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LIVE_KEY) ?? "null");
+    if (!saved || !Array.isArray(saved.list)) return null;
+    if (Date.now() - saved.at > LIVE_TTL_MS) return null;
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
+// 첫 렌더용 스냅샷.
+// 저장된 스냅샷이 있으면 이어받고(그 사이 흐른 시간만큼 틱 진행), 없으면 새로 생성.
 export function initialSnapshot() {
+  const saved = loadLive();
+  if (saved) {
+    liveList = restaurants.map((r) => {
+      const s = saved.list.find((x) => x.id === r.id);
+      if (!s) {
+        const c = clamp(baselineOf(r.hourly, hourFloat()) + rand(-6, 6), 0, 100);
+        return finish(r, c, (profileOf(r).maxQueue * c) / 100);
+      }
+      return finish(r, s.congestion, s._queueF ?? 0);
+    });
+    // 저장 후 흐른 시간만큼 시뮬레이션을 진행시켜 자연스럽게 이어붙임 (최대 2분어치)
+    const ticks = Math.min(40, Math.floor((Date.now() - saved.at) / 3000));
+    for (let i = 0; i < ticks; i++) liveList = nextTick(liveList, 3);
+    saveLive();
+    return liveList;
+  }
+
   const h = hourFloat();
   liveList = restaurants.map((r) => {
     const c = clamp(baselineOf(r.hourly, h) + rand(-6, 6), 0, 100);
     const queueF = (profileOf(r).maxQueue * c) / 100;
     return finish(r, c, queueF);
   });
+  saveLive();
   return liveList;
 }
 
@@ -95,6 +148,7 @@ export function nextTick(prev, dtSec = 3, newOrders = {}) {
 
     return finish(r, c, queueF);
   });
+  saveLive();
   return liveList;
 }
 
