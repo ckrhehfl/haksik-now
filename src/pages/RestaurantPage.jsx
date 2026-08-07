@@ -197,22 +197,41 @@ export default function RestaurantPage() {
                 color: menu.soldOut ? "#9ca3af" : "#111827",
               }}
             >
-              <span>
-                {menu.name}
-                {menu.soldOut && (
-                  <span
-                    style={{
-                      marginLeft: 8,
-                      fontSize: 12,
-                      background: "#e5e7eb",
-                      color: "#6b7280",
-                      borderRadius: 6,
-                      padding: "2px 6px",
-                    }}
-                  >
-                    품절
-                  </span>
-                )}
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span
+                  aria-hidden
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    background: "#f3f4f6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 22,
+                    flexShrink: 0,
+                    filter: menu.soldOut ? "grayscale(1)" : "none",
+                  }}
+                >
+                  {menu.emoji ?? "🍽️"}
+                </span>
+                <span>
+                  {menu.name}
+                  {menu.soldOut && (
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        fontSize: 12,
+                        background: "#e5e7eb",
+                        color: "#6b7280",
+                        borderRadius: 6,
+                        padding: "2px 6px",
+                      }}
+                    >
+                      품절
+                    </span>
+                  )}
+                </span>
               </span>
               <span>{menu.price.toLocaleString()}원</span>
             </li>

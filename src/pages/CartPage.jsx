@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import { getCart, setCart, clearCart } from "../data/cart";
+import { menuEmoji } from "../data/mockData";
 import { estimateWait } from "../data/liveSim";
 import { makeOrder, setPendingOrder } from "../data/orders";
 
@@ -80,11 +81,29 @@ export default function CartPage() {
                 borderBottom: "1px solid #f0f0f0",
               }}
             >
-              <span>
-                {item.name}
-                <div style={{ fontSize: 13, color: "#6b7280" }}>
-                  {item.price.toLocaleString()}원
-                </div>
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span
+                  aria-hidden
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    background: "#f3f4f6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 22,
+                    flexShrink: 0,
+                  }}
+                >
+                  {menuEmoji(item.id)}
+                </span>
+                <span>
+                  {item.name}
+                  <div style={{ fontSize: 13, color: "#6b7280" }}>
+                    {item.price.toLocaleString()}원
+                  </div>
+                </span>
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button

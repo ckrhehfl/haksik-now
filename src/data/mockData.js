@@ -15,9 +15,9 @@ export const restaurants = [
     waitMinutes: 21, // 예상 대기 시간(분)
     hourly: [25, 92, 78, 40, 22, 18, 35], // 11시~17시 시간대별 혼잡도
     menus: [
-      { id: "m1", name: "고기든든", price: 3900, soldOut: false },
-      { id: "m2", name: "제육덮밥", price: 3900, soldOut: false },
-      { id: "m3", name: "치킨마요", price: 3900, soldOut: false },
+      { id: "m1", name: "고기든든", price: 3900, soldOut: false, emoji: "🍖" },
+      { id: "m2", name: "제육덮밥", price: 3900, soldOut: false, emoji: "🥘" },
+      { id: "m3", name: "치킨마요", price: 3900, soldOut: false, emoji: "🍗" },
     ],
   },
   {
@@ -28,9 +28,9 @@ export const restaurants = [
     waitMinutes: 16,
     hourly: [18, 68, 60, 32, 18, 15, 30],
     menus: [
-      { id: "m4", name: "포포쌀국수", price: 4500, soldOut: false },
-      { id: "m5", name: "우삼겹쌀국수", price: 5900, soldOut: false },
-      { id: "m6", name: "마라우삼겹쌀국수", price: 7400, soldOut: false },
+      { id: "m4", name: "포포쌀국수", price: 4500, soldOut: false, emoji: "🍜" },
+      { id: "m5", name: "우삼겹쌀국수", price: 5900, soldOut: false, emoji: "🥩" },
+      { id: "m6", name: "마라우삼겹쌀국수", price: 7400, soldOut: false, emoji: "🌶️" },
     ],
   },
   {
@@ -41,9 +41,9 @@ export const restaurants = [
     waitMinutes: 22,
     hourly: [22, 85, 72, 38, 25, 20, 40],
     menus: [
-      { id: "m7", name: "등심돈까스(L)", price: 6900, soldOut: false },
-      { id: "m8", name: "경성치킨카레라이스", price: 6500, soldOut: false },
-      { id: "m9", name: "고구마돈까스", price: 7900, soldOut: false },
+      { id: "m7", name: "등심돈까스(L)", price: 6900, soldOut: false, emoji: "🍱" },
+      { id: "m8", name: "경성치킨카레라이스", price: 6500, soldOut: false, emoji: "🍛" },
+      { id: "m9", name: "고구마돈까스", price: 7900, soldOut: false, emoji: "🍠" },
     ],
   },
   {
@@ -54,9 +54,9 @@ export const restaurants = [
     waitMinutes: 4,
     hourly: [10, 38, 32, 20, 12, 10, 18],
     menus: [
-      { id: "m10", name: "육회비빔밥", price: 5900, soldOut: false },
-      { id: "m11", name: "연어비빔밥", price: 6900, soldOut: false },
-      { id: "m12", name: "오색비빔밥", price: 5700, soldOut: false },
+      { id: "m10", name: "육회비빔밥", price: 5900, soldOut: false, emoji: "🥩" },
+      { id: "m11", name: "연어비빔밥", price: 6900, soldOut: false, emoji: "🐟" },
+      { id: "m12", name: "오색비빔밥", price: 5700, soldOut: false, emoji: "🍚" },
     ],
   },
   {
@@ -67,12 +67,21 @@ export const restaurants = [
     waitMinutes: 22,
     hourly: [30, 95, 88, 50, 30, 22, 45],
     menus: [
-      { id: "m13", name: "우삼겹 순두부찌개", price: 6900, soldOut: false },
-      { id: "m14", name: "우삼겹 된장찌개", price: 6500, soldOut: false },
-      { id: "m15", name: "돼지 김치찌개", price: 6500, soldOut: false },
+      { id: "m13", name: "우삼겹 순두부찌개", price: 6900, soldOut: false, emoji: "🍲" },
+      { id: "m14", name: "우삼겹 된장찌개", price: 6500, soldOut: false, emoji: "🥣" },
+      { id: "m15", name: "돼지 김치찌개", price: 6500, soldOut: false, emoji: "🫕" },
     ],
   },
 ];
+
+// 메뉴 id → 이모지 (장바구니·주문내역처럼 저장된 항목에서 쓸 때)
+export function menuEmoji(menuId) {
+  for (const r of restaurants) {
+    const m = r.menus.find((x) => x.id === menuId);
+    if (m) return m.emoji ?? "🍽️";
+  }
+  return "🍽️";
+}
 
 // 혼잡도 숫자 → 등급/색/이모지 로 바꿔주는 공용 함수 (모두 이걸 씁니다)
 export function congestionLevel(c) {

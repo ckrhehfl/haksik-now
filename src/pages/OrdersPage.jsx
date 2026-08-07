@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import { orderStatus, estimateWait } from "../data/liveSim";
+import { menuEmoji } from "../data/mockData";
 
 function readOrders() {
   try {
@@ -126,6 +127,9 @@ export default function OrdersPage() {
                   }}
                 >
                   <span>
+                    <span aria-hidden style={{ marginRight: 6 }}>
+                      {menuEmoji(it.id)}
+                    </span>
                     {it.name} x {it.qty}
                   </span>
                   <span>{(it.price * it.qty).toLocaleString()}원</span>
