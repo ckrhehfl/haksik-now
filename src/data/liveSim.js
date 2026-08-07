@@ -22,17 +22,12 @@ const profileOf = (r) => PROFILES[r.id] ?? DEFAULT_PROFILE;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 
-// 운영시간(11~17시) 밖에서는 점심 피크 시각으로 간주합니다.
-// 그러지 않으면 저녁·새벽 시연 때 모든 식당이 '여유'로만 보여 혼잡 화면을 못 보여줍니다.
-const OPEN_HOUR = 11;
-const CLOSE_HOUR = 17;
-const DEMO_HOUR = 12.5; // 12:30 점심 피크
-
-// 현재 시각을 소수 시(예: 12.5 = 12:30)로 반환
+// 현재 시각을 소수 시(예: 12.5 = 12:30)로 반환 — 실제 시간을 그대로 따릅니다.
+// 운영시간(11~17시) 밖에서는 baselineOf가 가장 가까운 경계 시간대(11시/17시)
+// 값으로 계산하므로, 아침·저녁엔 자연스럽게 한산하게 보입니다.
 function hourFloat() {
   const now = new Date();
-  const h = now.getHours() + now.getMinutes() / 60;
-  return h >= OPEN_HOUR && h <= CLOSE_HOUR ? h : DEMO_HOUR;
+  return now.getHours() + now.getMinutes() / 60;
 }
 
 // hourly 배열(인덱스 0=11시 … 6=17시)을 현재 시각으로 선형 보간한 기준 혼잡도
